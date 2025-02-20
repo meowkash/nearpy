@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 
-prs_wavefrms = pd.read_csv('/Users/aakash/Desktop/Pressure.csv', names=['t', 'pressure'])
-vol_wavefrms = pd.read_csv('/Users/aakash/Desktop/Volume.csv', names=['t', 'volume'])
+prs_wavefrms = pd.read_csv('Pressure.csv', names=['t', 'pressure'])
+vol_wavefrms = pd.read_csv('Volume.csv', names=['t', 'volume'])
 
 prs_wavefrms.apply(lambda x: np.round(x, 3))
 vol_wavefrms.apply(lambda x: np.round(x, 3))

@@ -219,8 +219,8 @@ if __name__ == "__main__":
     reference_df = pd.DataFrame({
         't': t_interp
     })
-    prs_wavefrms = pd.read_csv('/Users/aakash/Desktop/Pressure.csv', names=['t', 'pressure'])
-    vol_wavefrms = pd.read_csv('/Users/aakash/Desktop/Volume.csv', names=['t', 'volume'])
+    prs_wavefrms = pd.read_csv('Pressure.csv', names=['t', 'pressure'])
+    vol_wavefrms = pd.read_csv('Volume.csv', names=['t', 'volume'])
 
     prs_wavefrms.apply(lambda x: np.round(x, 3))
     vol_wavefrms.apply(lambda x: np.round(x, 3))
