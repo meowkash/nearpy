@@ -6,7 +6,7 @@ from tslearn.barycenters import softdtw_barycenter as DBA
 from pathlib import Path 
 import pandas as pd 
 
-from .read_files import TxRx
+from ..data import TxRx
 
 from lets_plot import *
 
