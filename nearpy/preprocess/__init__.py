@@ -1,2 +1,5 @@
 from .cvi import cvi
-from .filters import get_gesture_filter, ncs_filt, detrend, spike_filter
+from .filters import *
+from .segmentation import *
+from .features import generate_feature_vector, get_cwt_feats
+from .utils import * 

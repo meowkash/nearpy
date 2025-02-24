@@ -1,29 +1,12 @@
-import ruptures as rpt 
-from bottleneck import move_std
 import numpy as np 
-import pywt
+import pandas as pd
+
+import numpy as np 
+from bottleneck import move_std
+import ruptures as rpt 
 from scipy.interpolate import CubicSpline
-import antropy as ant
-import tsfresh 
 
 from .utils import reject_outliers
-
-def get_AE_feats(sig): 
-    pass 
-
-def get_cwt_feats(sig, fs, wavelet):    
-    scales = range(fs)
-    coeff, _ = pywt.cwt(sig, scales, wavelet, 1)
-    return coeff
-
-def get_time_series_feats(sig):
-    '''
-    Given a time series signal of shape (NxD), return an array of interpretable features (NxM)
-    '''
-    mob, comp = ant.hjorth_params(sig)
-    zc = ant.num_zerocross(sig) 
-    svd_ent = ant.svd_entropy(sig, order=2)
-    pass 
 
 # For a given time series input, get the segment indices 
 def get_segment_indices(sig, window, min_samples, kernel='linear', num_points=4):
@@ -64,3 +47,19 @@ def segment_gesture(sig, num_channels=16, kernel='linear', min_size=0.4, num_poi
         sig_seg[i, :] = spl(x_new)
         
     return sig_seg
+
+def make_action_segmented_dataset(dataset, num_channels=16, fs=1000):
+    # Segment length is chosen to be same as fs
+    action_data = np.zeros((len(dataset), num_channels*fs))
+    
+    for i in range(len(dataset)):
+        dat = np.reshape(dataset.iloc[i]['mag'], (num_channels, -1))
+        xseg = segment_gesture(dat, num_channels=num_channels, fs=fs)
+        action_data[i, :] = np.reshape(xseg, -1)
+    
+    seg_dataset = pd.DataFrame({'subject': dataset['subject'].squeeze(),
+                                'routine': dataset['routine'].squeeze(),
+                                'gesture': dataset['gesture'].squeeze(), 
+                                'mag': action_data.tolist()})
+    
+    return seg_dataset

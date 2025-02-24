@@ -1,6 +1,6 @@
 from .dataset import *
 
-from .features import *
+from .preprocess.features import *
 from .utils import *
 from .helpers import *
 
