@@ -9,7 +9,7 @@ import pandas as pd
 import tsfresh.feature_extraction.feature_calculators as fc
 
 from . import TimeSeriesAutoencoder, GestureTimeDataset, train_and_evaluate, AEWrapper
-from ..data import get_dataloaders
+from ..utils import get_dataloaders
     
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''
