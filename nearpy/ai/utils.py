@@ -142,8 +142,8 @@ def load_dataset(base_path, gestures, num_channels=16,
     ts_feat_df = make_feature_dataset(filt_df, method='ts', base_path=data_path)
     ae_feat_df = make_feature_dataset(filt_df, method='ae', base_path=data_path)
     # Longitudinal
-    ts_long_feat_df = make_feature_dataset(long_filt_df, method='ts', base_path=data_path)
-    ae_long_feat_df = make_feature_dataset(long_filt_df, method='ae', base_path=data_path)
+    ts_long_feat_df = make_feature_dataset(long_filt_df, method='ts', base_path=long_data_path)
+    ae_long_feat_df = make_feature_dataset(long_filt_df, method='ae', base_path=long_data_path)
     
     num_subjects = len(set(df['subject']))
     print(f'Dataset contains {num_subjects} subjects. Longitudinal Subjects: {set(long_df["subject"])}')

@@ -6,6 +6,9 @@ import numpy as np
 from tslearn.neighbors import KNeighborsTimeSeriesClassifier
 from tslearn.svm import TimeSeriesSVC
 from tslearn.clustering import TimeSeriesKMeans
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier, AdaBoostClassifier, BaggingClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.tree import DecisionTreeClassifier
 
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
@@ -110,17 +113,34 @@ def _classify_kfcv(clf, data, num_classes,
 
     return cm, get_accuracy(cm)
 
-
-def _get_classifier(classifier, metric, **kwargs): 
-    if classifier == 'svc':
-        # SVM with GAK is seen to ba a good alternative to 1-NN with DTW since the latter is not a true distance. Kernel Options: gak, rbf, poly, sigmoid
-        clf = TimeSeriesSVC(kernel=metric, gamma=0.1) 
-    elif classifier == 'kmeans':
-        # Important: Specify n_clusters
-        clf = TimeSeriesKMeans(random_state=42, metric=metric, **kwargs)
-    else:
-        # By default, simply do 1-NN with DTW
-        clf = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=metric) 
+def get_classifier_obj(classifier, **kwargs): 
+    '''
+    - SVM with GAK is seen to ba a good alternative to 1-NN with DTW since the latter is not a true distance. Kernel Options: gak, rbf, poly, sigmoid
+    - LDA: eigen, lsqr
+    - 
+    '''
+    dt = DecisionTreeClassifier(max_depth=kwargs.get('depth', 5)) 
+    dist_clfs = {
+        'svc':TimeSeriesSVC(kernel=kwargs.get('metric'), gamma=0.1),
+        'kmeans': TimeSeriesKMeans(random_state=42, metric=kwargs.get('metric'), n_clusters=kwargs.get('n_clusters', 9)),
+        'nn': KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=kwargs.get('metric'))
+    }
+    feat_clfs = {
+        'rforest': RandomForestClassifier(n_estimators=kwargs.get('n_estimators', 10), 
+                                          criterion='log_loss', random_state=42),
+        'lda': LinearDiscriminantAnalysis(solver=kwargs.get('solver', 'svd')), 
+        'adaboost': AdaBoostClassifier(estimator=dt, n_estimators=kwargs.get('n_estimators', 10), 
+                                       algorithm='SAMME', random_state=42), 
+        'bagging': BaggingClassifier(estimator=dt, n_estimators=kwargs.get('n_estimators', 10))
+    }
+    
+    if classifier in feat_clfs.keys():
+        clf = feat_clfs[classifier]
+    elif classifier in dist_clfs.keys():
+        clf = dist_clfs[classifier]
+    else: 
+        # Ensemble by default
+        clf = VotingClassifier(estimators=feat_clfs.items(), voting=kwargs.get('voting', 'hard'))    
     
     return clf
 
