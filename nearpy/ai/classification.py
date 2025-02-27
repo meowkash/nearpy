@@ -14,13 +14,10 @@ from ..utils import get_accuracy
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn
 from ..plots import plot_pretty_confusion_matrix
     
-def distance_classify_gestures(data, base_path, 
-                 subject_key='subject', routine_key='routines', 
-                 class_key='gesture', metric='dtw',
-                 exp_name='kfold', exp_type='kfcv', 
-                 classifier='nn', n_splits=4, visualize=True):
-    print(f'Experiment Details: \n{classifier} classifier with {metric} metric')
-    
+def classify_gestures(data, base_path, clf, 
+                 subject_key='subject', routine_key='routine', 
+                 class_key='gesture', exp_name='kfold', 
+                 exp_type='kfcv', n_splits=4, visualize=True):
     res_fname = Path(base_path) / f'results_{exp_name}.pkl'
     if res_fname.exists(): 
         print('Loading pre-existing results')
@@ -41,28 +38,25 @@ def distance_classify_gestures(data, base_path,
     
     for sub in subjects:
         # Get classifier object 
-        clf = _get_classifier(classifier, metric)
-        print(f'Processing Subject {sub}')    
-
         if exp_type == 'loro':
-            cmat[sub], acc[sub] = _distance_classify_loro(clf, data, num_classes, sub, routine_key, subject_key, pbar=pbar)
+            cmat[sub], acc[sub] = _classify_loro(clf, data, num_classes, sub, routine_key, subject_key, pbar=pbar)
         else: 
-            cmat[sub], acc[sub] = _distance_classify_kfcv(clf, data, num_classes, subject_num=sub, n_splits=n_splits, pbar=pbar)
+            cmat[sub], acc[sub] = _classify_kfcv(clf, data, num_classes, subject_num=sub, n_splits=n_splits, pbar=pbar)
         
         print(f'Subject {sub} Accuracy: {acc[sub]}')
         pickle.dump([cmat, acc], open(res_fname, 'wb'))
         
     pbar.close()
-
+    # Print overall accuracy 
+    print(f'Overall Accuracy: {get_accuracy(cmat)}')
+    
     if visualize:
         plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=base_path)
         
-def _distance_classify_loro(clf, data, num_classes, 
+def _classify_loro(clf, data, num_classes, 
                             subject_num, routine_key, 
                             subject_key, random_state=42, 
                             pbar=None, debug=False): 
-    print(f'Performing leave-one routine out classification')
-    
     subset_map = { subject_key: subject_num }
     routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
     
@@ -93,12 +87,9 @@ def _distance_classify_loro(clf, data, num_classes,
     
     return cm, get_accuracy(cm)
 
-def _distance_classify_kfcv(clf, data, num_classes, 
+def _classify_kfcv(clf, data, num_classes, 
                             subject_num, n_splits=4, 
                             random_state=42, pbar=None, debug=False): 
-    
-    print(f'Performing {n_splits}-Fold CV')
-    
     X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
     cm = np.zeros((num_classes, num_classes))
 
@@ -118,6 +109,7 @@ def _distance_classify_kfcv(clf, data, num_classes,
             pbar.update(1) 
 
     return cm, get_accuracy(cm)
+
 
 def _get_classifier(classifier, metric, **kwargs): 
     if classifier == 'svc':

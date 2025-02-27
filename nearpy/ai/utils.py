@@ -5,21 +5,11 @@ from pathlib import Path
 import numpy as np 
 import pandas as pd
 from scipy.signal import filtfilt
-from torch.utils.data import DataLoader, random_split
 
 from ..utils import read_tdms
 from ..preprocess import get_gesture_filter
 
-def get_dataloaders(dataset, split=0.3, train_batch=32, val_batch=32):
-    val_size = round(split * len(dataset))
-    train_size = len(dataset) - val_size
-    
-    train_set, val_set = random_split(dataset, [train_size, val_size])
-    train_loader = DataLoader(train_set, batch_size=train_batch, shuffle=True, 
-                              num_workers=16, persistent_workers=True)
-    val_loader = DataLoader(val_set, batch_size=val_batch, shuffle=False, 
-                            num_workers=8, persistent_workers=True)
-    return train_loader, val_loader
+from .features import generate_feature_df
 
 def make_dataset(data_path, gestures, num_reps, seg_time, fs, 
                    num_channels, ds_ratio, f_s=15, visualize=False, refresh=False):
