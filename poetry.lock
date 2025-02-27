@@ -131,28 +131,6 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
-name = "antropy"
-version = "0.1.9"
-description = "AntroPy: entropy and complexity of time-series in Python"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "antropy-0.1.9-py3-none-any.whl", hash = "sha256:b9926491579f6135a0b4461696410abbaf108b182f3d83f009787445625b0089"},
-    {file = "antropy-0.1.9.tar.gz", hash = "sha256:7c234464e065a566eaff4d367db31c0983ef669803ba7c4e35c74e1518adee21"},
-]
-
-[package.dependencies]
-numba = ">=0.57"
-numpy = "*"
-scikit-learn = "*"
-scipy = "*"
-
-[package.extras]
-docs = ["numpydoc", "sphinx (>7.0.0)", "sphinx-copybutton", "sphinx-design", "stochastic"]
-test = ["coverage[toml] (>=5.3)", "pytest (>=6)", "pytest-cov", "ruff"]
-
-[[package]]
 name = "asttokens"
 version = "3.0.0"
 description = "Annotate AST trees with source code positions"
@@ -2811,6 +2789,18 @@ files = [
 torch = "2.6.0"
 
 [[package]]
+name = "torchinfo"
+version = "1.8.0"
+description = "Model summary in PyTorch, based off of the original torchsummary."
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "torchinfo-1.8.0-py3-none-any.whl", hash = "sha256:2e911c2918603f945c26ff21a3a838d12709223dc4ccf243407bce8b6e897b46"},
+    {file = "torchinfo-1.8.0.tar.gz", hash = "sha256:72e94b0e9a3e64dc583a8e5b7940b8938a1ac0f033f795457f27e6f4e7afa2e9"},
+]
+
+[[package]]
 name = "torchmetrics"
 version = "1.6.1"
 description = "PyTorch native Metrics"
@@ -3157,4 +3147,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "c22ec67ec0b6c7f0e81d1fac06b42b63102767176bd52e41deea0d998137999a"
+content-hash = "edfe1243aec36cbb1cab0dc4ebf16383174fe0ae29025a22834562caf8b29cb8"

@@ -23,9 +23,9 @@ dependencies = [
     "tslearn (>=0.6.3,<0.7.0)",
     "tsfresh (>=0.21.0,<0.22.0)",
     "lets-plot (>=4.5.2,<5.0.0)",
-    "antropy (>=0.1.9,<0.2.0)",
     "ipympl (>=0.9.6,<0.10.0)",
-    "pytorch-lightning (>=2.5.0.post0,<3.0.0)"
+    "pytorch-lightning (>=2.5.0.post0,<3.0.0)",
+    "torchinfo (>=1.8.0,<2.0.0)"
 ]
 
 [build-system]
