@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import seaborn as sns 
 
-from nearpy import get_accuracy
+from ..utils import get_accuracy
 
 def plot_pretty_confusion_matrix(cmat, gestures, cmap='Greens', sub_id=None, save=False, save_path=None):
     # Store overall confusion matrix over all subjects 

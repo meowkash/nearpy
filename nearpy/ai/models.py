@@ -25,7 +25,15 @@ class TimeSeriesAutoencoder(nn.Module):
         self.encoded = self.encoder(x)
         decoded = self.decoder(self.encoded)
         return decoded
-    
+
+class AEWrapper(nn.Module):
+    def __init__(self, input_size, encoding_size, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.model = TimeSeriesAutoencoder(input_size=input_size, encoding_size=encoding_size)
+
+    def forward(self, x):
+        _ = self.model(x) # Forward pass 
+        return self.model.encoded
 
 # Define the CNN model
 class CWTClassifier(nn.Module):

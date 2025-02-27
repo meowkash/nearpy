@@ -5,6 +5,8 @@ import pandas as pd
 
 from nptdms import TdmsFile
 
+from ..utils import TxRx
+
 def read_tdms(fPath, num_channels, bio_channel=None, n_mimo=4,
               downsample_factor=10, truncate_start=0, truncate_end=1):
     # Read, truncate, downsample and save
@@ -69,6 +71,3 @@ def dec_and_trunc(inp, truncate_start, truncate_end, downsample_factor):
     from scipy.signal import decimate
     decInp = decimate(inp, downsample_factor)
     return decInp[truncate_start:-truncate_end]
-
-def TxRx(x, n_mimo=4):
-    return 'Tx' + str((x)%n_mimo +1) + 'Rx' + str(math.ceil((x+1)/n_mimo))

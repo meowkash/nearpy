@@ -20,21 +20,6 @@ def get_dataloaders(dataset, split=0.3, train_batch=32, val_batch=32):
                             num_workers=8, persistent_workers=True)
     return train_loader, val_loader
 
-# tslearn dataset spec  is (num_cases, time_steps, num_channels)
-def make_tslearn_dataset(dataset, num_channels=16, 
-                         data_key='mag', label_key='gesture', 
-                         subset_key='subject', subset_val=None):
-    if subset_val is not None:
-        dft = dataset.loc[dataset[subset_key] == subset_val] 
-    else:
-        dft = dataset
-    
-    data = np.array([np.transpose(np.reshape(dft.iloc[i][data_key], (num_channels, -1))) for i in range(len(dft))])
-    label = dft[label_key].to_numpy()
-    routine = dft['routine'].to_numpy()
-    
-    return data, label, routine 
-
 def make_dataset(data_path, gestures, num_reps, seg_time, fs, 
                    num_channels, ds_ratio, f_s=15, visualize=False, refresh=False):
     """Loads TDMS files, processes signals, and saves datasets."""
@@ -144,13 +129,3 @@ def load_dataset(base_path, gestures, num_channels=16,
     print(f'Dataset contains {num_subjects} subjects. Longitudinal Subjects: {set(long_df["subject"])}')
     
     return df, filt_df, long_df, long_filt_df
-
-def get_small_dataframe(df, map_dict=None):
-    if map_dict is None: 
-        return df  
-    
-    subset_df = df
-    for k, v in map_dict.items(): 
-        subset_df = subset_df.loc[subset_df[k] == v]
-
-    return subset_df

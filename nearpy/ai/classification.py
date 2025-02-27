@@ -10,8 +10,8 @@ from tslearn.clustering import TimeSeriesKMeans
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 
-from .utils import make_tslearn_dataset
-from ..utils import get_accuracy, get_small_dataframe
+from ..utils import get_accuracy
+from .utils import get_dataframe_subset, adapt_dataset_to_tslearn
 from ..plots import plot_pretty_confusion_matrix
     
 def distance_classify_gestures(data, base_path, 
@@ -64,9 +64,9 @@ def _distance_classify_loro(clf, data, num_classes,
     print(f'Performing leave-one routine out classification')
     
     subset_map = { subject_key: subject_num }
-    routines = list(set(get_small_dataframe(data, subset_map)[routine_key]))
+    routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
     
-    X, y, routs = make_tslearn_dataset(data, subset_val=subject_num)
+    X, y, routs = adapt_dataset_to_tslearn(data, subset_val=subject_num)
     cm = np.zeros((num_classes, num_classes))
         
     for rt in routines:
@@ -99,7 +99,7 @@ def _distance_classify_kfcv(clf, data, num_classes,
     
     print(f'Performing {n_splits}-Fold CV')
     
-    X, y, _ = make_tslearn_dataset(data, subset_val=subject_num)
+    X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
     cm = np.zeros((num_classes, num_classes))
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -138,7 +138,7 @@ def _get_total_steps(data, subject_key, routine_key, exp_type='kfcv', **kwargs):
         total_steps = 0
         for sub in subjects:
             subset_map = { subject_key: sub }
-            routines = list(set(get_small_dataframe(data, subset_map)[routine_key]))
+            routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
             total_steps += len(routines)
         return total_steps
     else: 
