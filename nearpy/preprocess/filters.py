@@ -1,7 +1,7 @@
 # This will maintain a collection of filters used throughout 
 # Refer: https://tomverbeure.github.io/2020/10/11/Designing-Generic-FIR-Filters-with-pyFDA-and-Numpy.html
 # Filters were made using MATLAB and PyFDA
-
+from sklearn.preprocessing import StandardScaler
 from scipy.signal import remez, freqz, filtfilt
 import numpy as np
 
@@ -21,6 +21,14 @@ def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
         
     return taps
 
+def filter_and_normalize(sig, filter, axis=0):
+    # Given a multi-variate signal array, filter and normalize each variable using z-score normalization 
+    filt = lambda x: filtfilt(filter[0], filter[1], x)
+    scaler = StandardScaler() 
+    scal = lambda x: scaler.fit_transform(filt(x))
+    
+    return np.apply_along_axis(scal, axis, sig)
+    
 # TODO: Jitter Removal - Use median filtering to remove small jitters 
 # TODO: Spike Removal - Use differential integral technique to remove sudden jumps due to ADC - Tweak Thresholding to ensure this does not impact the morphology of acquired signal 
 

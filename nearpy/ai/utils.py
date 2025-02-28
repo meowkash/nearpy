@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.signal import filtfilt
 
 from ..utils import read_tdms
-from ..preprocess import get_gesture_filter
+from ..preprocess import get_gesture_filter, filter_and_normalize
 
 from .features import generate_feature_df
 
@@ -57,11 +57,15 @@ def make_dataset(data_path, gestures, num_reps, seg_time, fs,
         
         start_idx = mag.shape[1] - ges_sub * stime
         # This is necessary to prevent issues arising from initial jumps
-        fm = np.array([filtfilt(filt_num, 1, mag[ch, start_idx:]) for ch in range(num_channels)])
-        fp = np.array([filtfilt(filt_num, 1, ph[ch, start_idx:]) for ch in range(num_channels)])
+        # fm = np.array([filtfilt(filt_num, 1, mag[ch, start_idx:]) for ch in range(num_channels)])
+        fm = filter_and_normalize(mag[:, start_idx:], (filt_num, 1), axis=0)
+        # fp = np.array([filtfilt(filt_num, 1, ph[ch, start_idx:]) for ch in range(num_channels)])
+        fp = filter_and_normalize(ph[:, start_idx:], (filt_num, 1), axis=0)
         mag = mag[:, start_idx: ]
         ph = ph[:, start_idx: ]
-
+        
+        print(fm.shape, fp.shape, mag.shape, ph.shape)
+        break 
         start_idx = 0
         
         for i in range(ges_sub):
