@@ -4,13 +4,15 @@
 from sklearn.preprocessing import MinMaxScaler
 from scipy.signal import remez, freqz, filtfilt
 import numpy as np
+import matplotlib.pyplot as plt 
+
+from ..utils import logprint
 
 def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
     ''' References: 
         [1]: https://stackoverflow.com/questions/24460718/how-to-use-pythons-scipy-signal-remez-output-for-scipy-signal-lfilter
     '''
-    if logger is not None:
-        logger.debug(f'Remez (equi-ripple) band-pass filter with pass band {[0.15, f_s]}')
+    logprint(logger, 'debug', f'Remez (equi-ripple) band-pass filter with pass band {[0.15, f_s]}')
         
     # Band-Pass Filter between 0.1 Hz and 15 Hz
     taps = remez(1415, [0, 0.05 , 0.2, f_s, f_s + 0.2, 0.5*fs], [0, 1, 0], fs=fs)
@@ -53,8 +55,7 @@ def detrend(sig, deg=3, logger=None):
     '''
     Detrend a given signal using a n-degree polynomial. By default, n is chosen to be 3 as it provides the best empirical results
     '''
-    if logger is not None:
-        logger.debug(f'Detrending signal with degree {deg} polynomial fit')
+    logprint(logger, 'debug', f'Detrending signal with degree {deg} polynomial fit')
     
     t = np.linspace(1, len(sig), len(sig))
     pfit = np.polynomial.Polynomial.fit(t, sig, deg=deg)
@@ -70,7 +71,6 @@ def dB20(array):
         return 20 * np.log10(array)
     
 def plot_response(w, h, title='Filter Response'):
-    import matplotlib.pyplot as plt
     "Utility function to plot response functions"
     fig = plt.figure()
     ax = fig.add_subplot(111)
