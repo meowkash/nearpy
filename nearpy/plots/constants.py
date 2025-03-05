@@ -11,7 +11,7 @@ DEFAULT_PLOT_STYLE = theme(axis_title_x=element_text(size=18, face='bold', famil
                     panel_background=element_rect(color='black', fill='#eeeeee', size=2),
                     panel_grid=element_line(color='black', size=1))
 
-def bbc_theme(show_x_axis=True):
+def BBC_THEME(show_x_axis=True):
     line_size = 1
 
     def get_element_text(title=False, subtitle=False, size=21):

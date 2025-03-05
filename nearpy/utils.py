@@ -85,3 +85,13 @@ def tdms_to_csv(fPath):
 def dec_and_trunc(inp, truncate_start, truncate_end, downsample_factor):
     decInp = decimate(inp, downsample_factor)
     return decInp[truncate_start:-truncate_end]
+
+# Log if logger available, else print
+def logprint(logger, level, message, *args, **kwargs):
+    if logger is not None:
+        log_method = getattr(logger, level, None)
+        if log_method:
+            log_method(message, *args, **kwargs)
+    else:
+        print(message)
+            

@@ -14,19 +14,21 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 
 from ..utils import get_accuracy
-from .utils import get_dataframe_subset, adapt_dataset_to_tslearn
+from .utils import get_dataframe_subset, adapt_dataset_to_tslearn, logprint
 from ..plots import plot_pretty_confusion_matrix
     
-def classify_gestures(data, base_path, clf, 
+def classify_gestures(data, base_path, clf, data_type='time',
                  subject_key='subject', routine_key='routine', 
                  class_key='gesture', exp_name='kfold', 
-                 exp_type='kfcv', n_splits=4, visualize=True):
+                 exp_type='kfcv', n_splits=4, visualize=True, logger=None):
+    logprint(logger, 'info', f'Experiment: {exp_name}')
     res_fname = Path(base_path) / f'results_{exp_name}.pkl'
+    
     if res_fname.exists(): 
-        print('Loading pre-existing results')
+        logprint(logger, 'debug', 'Loading pre-existing results')
         cmat, acc = pickle.load(open(res_fname, 'rb'))
     else:
-        print('Creating new confusion matrix')
+        logprint(logger, 'debug', 'Creating new confusion matrix')
         cmat, acc = {}, {}
 
     # Set up tqdm 
@@ -42,45 +44,51 @@ def classify_gestures(data, base_path, clf,
     for sub in subjects:
         # Get classifier object 
         if exp_type == 'loro':
-            cmat[sub], acc[sub] = _classify_loro(clf, data, num_classes, sub, routine_key, subject_key, pbar=pbar)
+            cmat[sub], acc[sub] = _classify_loro(clf, data, num_classes, sub, routine_key, subject_key, pbar=pbar, data_type=data_type)
         else: 
-            cmat[sub], acc[sub] = _classify_kfcv(clf, data, num_classes, subject_num=sub, n_splits=n_splits, pbar=pbar)
+            cmat[sub], acc[sub] = _classify_kfcv(clf, data, num_classes, subject_num=sub, n_splits=n_splits, pbar=pbar, data_type=data_type)
         
-        print(f'Subject {sub} Accuracy: {acc[sub]}')
+        logprint(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
         pickle.dump([cmat, acc], open(res_fname, 'wb'))
         
     pbar.close()
+    
     # Print overall accuracy 
-    print(f'Overall Accuracy: {get_accuracy(cmat)}')
+    logprint(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
     
     if visualize:
         plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=base_path)
         
 def _classify_loro(clf, data, num_classes, 
-                            subject_num, routine_key, 
-                            subject_key, random_state=42, 
-                            pbar=None, debug=False): 
+                    subject_num, routine_key, 
+                    subject_key, random_state=42, 
+                    pbar=None, data_type='time', logger=None): 
     subset_map = { subject_key: subject_num }
     routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
-    
-    X, y, routs = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+    if data_type == 'time':
+        X, y, routs = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+    else:
+        subset_map = {
+            subject_key: subject_num,
+        }
+        subset = get_dataframe_subset(data, subset_map)
+        X, y, routs = np.squeeze(list(subset['mag'])), np.array(subset['gesture']), np.array(subset[routine_key])
+
     cm = np.zeros((num_classes, num_classes))
         
     for rt in routines:
-        print(f'Excluding routine {rt}')
+        logprint(logger, 'debug', f'Excluding routine {rt}')
         test_idx = (routs == rt)     
         # Train/Val/Test Split with Test being new routine
         X_train, X_val, y_train, y_val = train_test_split(X[~test_idx], y[~test_idx], test_size=0.3, random_state=random_state)
         X_test = X[test_idx]
         y_test = y[test_idx]
         
-        if debug: 
-            print(f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
+        logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
         
         clf.fit(X_train, y_train) # Train
-        if debug:
-            # Validate
-            print(f'Validation Accuracy: {clf.score(X_val, y_val)}') 
+        # Validate
+        logprint(logger, 'debug', f'Validation Accuracy: {clf.score(X_val, y_val)}') 
         
         y_pred = clf.predict(X_test) # Test
         cm += confusion_matrix(y_test, y_pred)
@@ -91,18 +99,28 @@ def _classify_loro(clf, data, num_classes,
     return cm, get_accuracy(cm)
 
 def _classify_kfcv(clf, data, num_classes, 
-                            subject_num, n_splits=4, 
-                            random_state=42, pbar=None, debug=False): 
-    X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+                    subject_num, n_splits=4, 
+                    random_state=42, pbar=None, 
+                    data_type='time', logger=None):
+    if data_type == 'time':
+        # If we are working with non-feature datasets, we need to adapt our data 
+        X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+    else:
+        # Otherwise for feature datasets, we keep flatenned arrays
+        subset_map = {
+            'subject': subject_num,
+        }
+        subset = get_dataframe_subset(data, subset_map)
+        X, y = np.squeeze(list(subset['mag'])), np.array(subset['gesture'])
+    
     cm = np.zeros((num_classes, num_classes))
-
+    
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     for train, test in kf.split(X, y):
         X_train, y_train = X[train], y[train]
         X_test, y_test = X[test], y[test]
         
-        if debug:
-            print(f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
+        logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
         
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
