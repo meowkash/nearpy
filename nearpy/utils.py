@@ -53,7 +53,7 @@ def read_mat(fPath, legacy=False):
     if legacy:
         # Compatibility for matfiles stored with version 7 instead of the recent 7.3
         from scipy.io import loadmat
-        matfile = loadmat(fPath)
+        matfile = loadmat(fPath, squeeze_me=True, simplify_cells=True)
     else:
         # By default, we work with v7.3
         from mat73 import loadmat
