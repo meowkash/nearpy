@@ -2,6 +2,7 @@ import math
 import os 
 import numpy as np 
 import pandas as pd
+from pathlib import Path 
 from nptdms import TdmsFile
 from scipy.signal import decimate
 
@@ -22,6 +23,34 @@ def _get_dict_accuracy(cm, num_classes):
 def TxRx(x, n_mimo=4):
     return 'Tx' + str((x)%n_mimo +1) + 'Rx' + str(math.ceil((x+1)/n_mimo))
 
+def get_mimo_channels(n_mimo, use_phase=False):
+    # Magnitude channels
+    channels = [TxRx(ch, n_mimo) for ch in range(n_mimo**2)]
+    if use_phase: 
+        phase_channels = [f'{TxRx(ch, n_mimo)}_Phase' for ch in range(n_mimo**2)] 
+        channels.extend(phase_channels)
+    
+    return channels
+
+def _prettify_channel_names(tdms_channels): 
+    clear_name = lambda x: x.split('/')[-1].strip("'>")
+    return [clear_name(str(ch)) for ch in list(tdms_channels)]
+    
+def _separate_channel_types(channel_list, excluded_channels=None, include_biopac=False): 
+    bio_channels = [x for x in channel_list if x.startswith('BIOPAC')]
+    rf_channels = list(set(channel_list) - set(bio_channels))
+     
+    remove_excluded = lambda x: list(set(x) - set(excluded_channels))
+    if excluded_channels is not None: 
+        bio_channels = remove_excluded(bio_channels)
+        rf_channels = remove_excluded(rf_channels)
+    
+    if not include_biopac: 
+        bio_channels = []
+    
+    return bio_channels, rf_channels
+    
+# DEPRECATION WARNING
 def read_tdms(fPath, num_channels, bio_channel=None, n_mimo=4,
               downsample_factor=10, truncate_start=0, truncate_end=1):
     # Read, truncate, downsample and save
@@ -47,7 +76,57 @@ def read_tdms(fPath, num_channels, bio_channel=None, n_mimo=4,
         # Properties can be read using the following command
         # tdms_file.properties
 
-        return mag, ph, bio    
+        return mag, ph, bio   
+
+# New version: Plan to move to this. 
+def read_tdms_v2(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False, 
+                 exclude=None, logger=None, *args, **kwargs):
+    '''
+    This function loads TDMS files and loads variables into dictionaries which may be easily converted into Dataframes. By default, all channels present in the TDMS file are loaded. 
+    
+    Input Arguments: 
+        f_path: str or pathlib.Path object representing file location
+        get_bio: bool, specifies if BIOPAC channels are to be returned or not
+        ds_ratio: int, specifies amount by which raw file must be downsampled
+        truncate: [int, int], specifies time to truncate from the start and end of recording
+        exclude: [strs], specifies channels to be excluded
+        logger: None or logging.Logger, for logging messages 
+    '''
+    
+    f_path = Path(f_path)
+    
+    with TdmsFile.open(f_path) as tdm:
+        # Get TDMS group
+        tdmg = tdm['Untitled']
+        # List available channels 
+        tdm_channels = _prettify_channel_names(tdmg.channels())
+        logprint(logger, 'debug', f'Available Channels: {tdm_channels}')
+        
+        if len(tdm_channels) == 0:
+            raise ValueError('TDMS file has no available channels')
+        
+        # Compute dimensions of input 
+        tmp = dec_and_trunc(tdmg[tdm_channels[0]][:], truncate[0], truncate[1], ds_ratio)
+        alen = len(tmp)
+        if get_bio: 
+            tmp = tdmg[bio_channels[0]]
+            alen = min(tmp.shape, alen)
+            
+        # Compute available channels  
+        bio_channels, rf_channels = _separate_channel_types(tdm_channels, exclude, get_bio)
+        logprint(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
+        
+        # Load data, ensuring all data elements have the same shape
+        rf, bio = {}, {} 
+        for ch in rf_channels: 
+            rf[ch] = dec_and_trunc(tdmg[ch][:], truncate[0], truncate[1], ds_ratio)
+        for ch in bio_channels: 
+            bio[ch] = tdmg[ch][truncate[0]:alen-truncate[1]]
+                        
+        # Properties can be read using the following command
+        props = tdm.properties
+
+    return rf, bio, props 
     
 def read_mat(fPath, legacy=False):
     if legacy:

@@ -5,6 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from scipy.signal import remez, freqz, filtfilt
 import numpy as np
 import matplotlib.pyplot as plt 
+from pathlib import Path
 
 from ..utils import logprint
 
@@ -22,6 +23,12 @@ def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
         plot_response(w, h)
         
     return taps
+
+def load_filter(filename):
+    f_path = Path(__file__).parent / 'saved_filters' / f'{filename}.npz'
+    fobj = np.load(f_path)
+    
+    return fobj['ba']
 
 def filter_and_normalize(sig, filter, axis=0):
     # Given a multi-variate signal array, filter and normalize each variable using z-score normalization 
