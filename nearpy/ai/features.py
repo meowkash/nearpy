@@ -8,7 +8,7 @@ import pandas as pd
 
 import tsfresh.feature_extraction.feature_calculators as fc
 
-from .models import TimeSeriesAutoencoder, AEWrapper
+from .models.cnn import TimeSeriesAutoencoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
     
