@@ -1,13 +1,10 @@
 from pathlib import Path
-
-import seaborn as sn 
-import pandas as pd 
 from torch import nn, optim
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import CSVLogger
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+import lightning as L
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
+from lightning.pytorch.loggers import TensorBoardLogger
 
-class LightRunner(pl.LightningModule):
+class LightRunner(L.LightningModule):
     def __init__(self, model, num_classes, loss=None, optimizer=None):
         super().__init__()
         self.model = model
@@ -41,38 +38,54 @@ class LightRunner(pl.LightningModule):
             return self.optimizer
 
 
-def train_and_evaluate(model, config, train_loader, val_loader, 
-                       plot=True, loss=None, 
-                       name="", ver=1, base_path=None):
-    # Define path to save checkpoints
-    if base_path is None: 
-        base_path = Path.cwd() 
-    ckpt_path = base_path / 'ckpts'
-    
+def train_and_evaluate(model, 
+                       config: dict, 
+                       datamodule):
+    # Reproducibility 
+    L.seed_everything(42, workers=True)
+
+    # Ensure we have a valid configuration
     assert config is not None, 'Configuration must not be empty'
     
-    if name == "": 
-        name = f'default_{task}'
+    # Get path to save checkpoints
+    base_path = config.get('base_path', Path.cwd())    
+    ckpt_path = base_path / 'ckpts'
+
+    # Get experiment name for saving
+    exp_name = config.get('exp_name', 'default')
+                                              
+    # Define callbacks 
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=ckpt_path, filename=exp_name, save_top_k=1, verbose=False, 
+        monitor='val_loss', mode='min', enable_version_counter=True
+    )
+    logging_callback = TensorBoardLogger(base_path/'logs', name=exp_name)
+    lr_monitor_callback = LearningRateMonitor(logging_interval="epoch")
     
-    # trainer = pl.Trainer(max_epochs=max_epochs, accelerator="auto", enable_progress_bar=True, 
-    #                                logger=CSVLogger(save_dir='logs/', name=name, version=ver),
-    #                                callbacks=[LearningRateMonitor(logging_interval="epoch"), 
-    #                                           ModelCheckpoint(dirpath=ckpt_path, filename=name, 
-    #                                                           save_top_k=1, verbose=False, monitor='val_loss', 
-    #                                                           mode='min', enable_version_counter=False)])
-    trainer = pl.Trainer(
-        accelerator=config.accelerator, 
-        devices=config.devices, 
-        max_epochs=config.max_epochs, 
+    #  (Optional) Enable for early stopping
+    early_callback = EarlyStopping(monitor='val_loss') 
+    
+    # Define trainer 
+    trainer = L.Trainer(
+        accelerator=config.get('accelerator', 'auto'), 
+        devices=config.get('devices', 'auto'), 
+        max_epochs=config.get('max_epochs', 100), 
+        deterministic=True, 
+        check_val_every_n_epoch=1, 
+        enable_progress_bar=True, # Uses TQDM Progress Bar by default
+        # callbacks=[
+        #     checkpoint_callback,
+        #     logging_callback,
+        #     lr_monitor_callback
+        # ]
     )
 
-    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    val_loss = trainer.callback_metrics['val_loss']
+    # Fit model 
+    trainer.fit(model, datamodule)
     
-    # Plot learning curves
-    if plot:
-        metrics = pd.read_csv(f"{trainer.logger.log_dir}/metrics.csv")
-        metrics.drop(columns=['step', 'lr-Adam', 'epoch'], inplace=True)
-        sn.relplot(data=metrics, kind="line")
+    # (Optional) Test model 
+    if config.get('test', False): 
+        trainer.test(model, datamodule)
     
-    return model, trainer, val_loss
+    # Analyze learning rates using Tensorboard
+    return model, trainer

@@ -1,8 +1,8 @@
-import pytorch_lightning as pl 
 import pandas as pd
 from pathlib import Path 
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
+import lightning as L
 
 class HemodynamixDataset(Dataset):
     def __init__(self, X, y, transform=None):
@@ -24,7 +24,7 @@ class HemodynamixDataset(Dataset):
 
         return elem, target
 
-class HemodynamixDataModule(pl.LightningDataModule):
+class HemodynamixDataModule(L.LightningDataModule):
     def __init__(
             self, 
             data_dir: Path, 
@@ -39,7 +39,7 @@ class HemodynamixDataModule(pl.LightningDataModule):
         super().__init__()
         
         # Ensure data dir is always a pathlib.Path object
-        assert data_dir.split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
+        assert str(data_dir).split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
         self.data_dir = data_dir
         
         self.batch_size = batch_size

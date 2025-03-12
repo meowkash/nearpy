@@ -19,3 +19,7 @@ That's it. You should be able to use NearPy on all operating systems from now on
 ai>datamodules: Each project gets its own datamodule to manage its unique dataset 
 ai>models: Each unique model is implemented here
 ```
+
+### References
+
+* [DataModule - PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/data/datamodule.html)
