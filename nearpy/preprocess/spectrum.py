@@ -2,6 +2,8 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 import matplotlib.pyplot as plt 
+from librosa.feature import melspectrogram
+from librosa.display import specshow
 
 def get_spectrogram(sig, fs, seg_frac=4.5, perc_overlap=0.5, visualize=False): 
     # We use the same defaults that matlab uses for consistency across code-bases 
@@ -40,3 +42,16 @@ def get_spectrogram(sig, fs, seg_frac=4.5, perc_overlap=0.5, visualize=False):
         plt.show()
         
     return specgram
+
+def get_mel_spectrogram(sig, fs, visualize=False): 
+    # This is primarily useful for understanding and analyzing sound data using the Mel-Frequency scale
+    specgram = melspectrogram(sig, sr=fs)
+    Sx_dB = 10 * np.log10(np.fmax(specgram, 1e-4))
+
+    if visualize: 
+    # Plot spectrogram
+        fig, ax = plt.subplots(nrows = 1, ncols = 1)
+        img = specshow(Sx_dB, x_axis='time', y_axis='mel', ax = ax)
+        fig.colorbar(img, ax = ax, format='%+2.0f dB')
+        ax.set_title('Mel-Scaled Spectrogram')
+        fig.show()

@@ -1,4 +1,3 @@
-import pywt
 from pathlib import Path 
 
 import torch 
@@ -11,7 +10,7 @@ import tsfresh.feature_extraction.feature_calculators as fc
 from .models import TimeAutoEncoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
-    
+
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''
 def generate_feature_df(dataframe, method, base_path="", num_vars=16, 
@@ -61,16 +60,6 @@ def generate_feature_df(dataframe, method, base_path="", num_vars=16,
     
     return feat_df
 
-def get_cwt_feats(df, f_low=0.1, f_high=15, fs=100, num_levels=30, wavelet='cgaul'): 
-    scales = np.linspace(f_low, f_high, num_levels)
-    widths = np.round(fs/scales)
-    
-    # Assuming that each column is a channel
-    get_feats = lambda x: np.abs(np.transpose(pywt.cwt(x, widths, wavelet=wavelet)))
-    cwt_extractor = lambda x: np.reshape(get_feats(x), (-1))
-    
-    return df.apply(cwt_extractor)
-
 def _pretrain_ae(df, data_key, label_key, base_path, 
                  num_vars=16, num_ae_steps=10, step_feats=4): 
     torch.set_float32_matmul_precision('medium')
@@ -86,7 +75,7 @@ def _pretrain_ae(df, data_key, label_key, base_path,
     for stp in range(num_ae_steps):
         enc_size = (stp + 1) * step_feats
        
-        model = TimeSeriesAutoencoder(input_size=input_size, encoding_size=enc_size)
+        model = TimeAutoEncoder(input_size=input_size, encoding_size=enc_size)
         enc_sizes[stp] = enc_size
 
         # Train using AE
