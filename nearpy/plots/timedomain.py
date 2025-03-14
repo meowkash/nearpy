@@ -39,6 +39,7 @@ def plot_routine_template(df, title="", num_channels=16, show_individual=True, d
             ax.legend(fontsize=10)
             ax.set_ylabel("Value", fontsize=12)
             ax.tick_params(axis='both', labelsize=10)
+            ax.set_ylim([0, 1])
         
         plt.xlabel("Time", fontsize=12)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])

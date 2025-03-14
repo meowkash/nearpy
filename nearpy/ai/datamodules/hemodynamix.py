@@ -16,6 +16,10 @@ class HemodynamixDataset(Dataset):
     def __getitem__(self, idx):
         # Load element and transform
         elem = self.inputs[idx]
+        
+        if elem.ndim == 1:
+            elem = elem.reshape(1, -1)
+            
         if self.transform is not None:
             elem = self.transform(elem)
             # tsai transforms to use: TSVerticalFlip, TSRandomShift, TSHorizontalFlip, TSRandomTrends, TSWarp
@@ -55,7 +59,8 @@ class HemodynamixDataModule(L.LightningDataModule):
         self.dataframe = pd.read_pickle(self.data_dir)
 
     def setup(self, stage=None):
-        X, y = self.dataframe[self.input_cols], self.dataframe[self.target_col]
+        X = self.dataframe[self.input_cols].to_numpy() 
+        y = self.dataframe[self.target_col].to_numpy()
         
         X_tv, X_test, y_tv, y_test = train_test_split(X, y, test_size=self.test_split)
         X_train, X_val, y_train, y_val = train_test_split(X_tv, y_tv, test_size=self.val_split)
