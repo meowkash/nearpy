@@ -1,8 +1,8 @@
-import pytorch_lightning as pl 
 import pandas as pd
 from pathlib import Path 
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
+import lightning as L
 
 class HemodynamixDataset(Dataset):
     def __init__(self, X, y, transform=None):
@@ -16,6 +16,10 @@ class HemodynamixDataset(Dataset):
     def __getitem__(self, idx):
         # Load element and transform
         elem = self.inputs[idx]
+        
+        if elem.ndim == 1:
+            elem = elem.reshape(1, -1)
+            
         if self.transform is not None:
             elem = self.transform(elem)
             # tsai transforms to use: TSVerticalFlip, TSRandomShift, TSHorizontalFlip, TSRandomTrends, TSWarp
@@ -24,7 +28,7 @@ class HemodynamixDataset(Dataset):
 
         return elem, target
 
-class HemodynamixDataModule(pl.LightningDataModule):
+class HemodynamixDataModule(L.LightningDataModule):
     def __init__(
             self, 
             data_dir: Path, 
@@ -39,7 +43,7 @@ class HemodynamixDataModule(pl.LightningDataModule):
         super().__init__()
         
         # Ensure data dir is always a pathlib.Path object
-        assert data_dir.split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
+        assert str(data_dir).split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
         self.data_dir = data_dir
         
         self.batch_size = batch_size
@@ -55,7 +59,8 @@ class HemodynamixDataModule(pl.LightningDataModule):
         self.dataframe = pd.read_pickle(self.data_dir)
 
     def setup(self, stage=None):
-        X, y = self.dataframe[self.input_cols], self.dataframe[self.target_col]
+        X = self.dataframe[self.input_cols].to_numpy() 
+        y = self.dataframe[self.target_col].to_numpy()
         
         X_tv, X_test, y_tv, y_test = train_test_split(X, y, test_size=self.test_split)
         X_train, X_val, y_train, y_val = train_test_split(X_tv, y_tv, test_size=self.val_split)

@@ -2,9 +2,9 @@
 import torch
 import torch.nn as nn 
 import torch.nn.functional as F
-import pytorch_lightning as pl 
+import lightning as L
 
-class CNNClassifier(pl.LightningDataModule): 
+class CNNClassifier(L.LightningModule): 
     # Model Architecture 
     def __init__(self, input_channels, num_classes, optimizer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)

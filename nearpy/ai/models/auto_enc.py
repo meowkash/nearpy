@@ -2,9 +2,9 @@
 import torch
 import torch.nn as nn 
 import torch.nn.functional as F
-import pytorch_lightning as pl 
+import lightning as L
 
-class TimeAutoEncoder(pl.LightningDataModule): 
+class TimeAutoEncoder(L.LightningModule): 
     # Model Architecture 
     def __init__(self, input_size, encoding_size, optimizer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,11 +52,11 @@ class TimeAutoEncoder(pl.LightningDataModule):
             return self.optimizer
         
 # AE Feature Extraction
-# class AEWrapper(nn.Module):
-#     def __init__(self, input_size, encoding_size, *args, **kwargs) -> None:
-#         super().__init__(*args, **kwargs)
-#         self.model = TimeSeriesAutoencoder(input_size=input_size, encoding_size=encoding_size)
+class AEWrapper(nn.Module):
+    def __init__(self, input_size, encoding_size, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.model = TimeAutoEncoder(input_size=input_size, encoding_size=encoding_size)
 
-#     def forward(self, x):
-#         _ = self.model(x) # Forward pass 
-#         return self.model.encoded
+    def forward(self, x):
+        _ = self.model(x) # Forward pass 
+        return self.model.encoded

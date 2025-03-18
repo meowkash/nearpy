@@ -13,14 +13,18 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 
-from ..utils import get_accuracy
+from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn, logprint
 from ..plots import plot_pretty_confusion_matrix
     
 def classify_gestures(data, base_path, clf, data_type='time',
                  subject_key='subject', routine_key='routine', 
                  class_key='gesture', exp_name='kfold', 
-                 exp_type='kfcv', n_splits=4, visualize=True, logger=None):
+                 exp_type='kfcv', n_splits=4, 
+                 visualize=True, logger=None):
+    '''
+    Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
+    '''
     logprint(logger, 'info', f'Experiment: {exp_name}')
     res_fname = Path(base_path) / f'results_{exp_name}.pkl'
     
@@ -32,9 +36,13 @@ def classify_gestures(data, base_path, clf, data_type='time',
         cmat, acc = {}, {}
 
     # Set up tqdm 
-    total_steps = _get_total_steps(data, subject_key,
-                                  routine_key, exp_type,
-                                  n_splits=n_splits)
+    total_steps = _get_total_steps(
+        data=data, 
+        subject_key=subject_key, 
+        routine_key=routine_key, 
+        exp_type=exp_type,
+        n_splits=n_splits
+    )
     pbar = tqdm(total=total_steps, desc='Classification Progress')
     
     classes = list(set(data[class_key]))
@@ -44,9 +52,28 @@ def classify_gestures(data, base_path, clf, data_type='time',
     for sub in subjects:
         # Get classifier object 
         if exp_type == 'loro':
-            cmat[sub], acc[sub] = _classify_loro(clf, data, num_classes, sub, routine_key, subject_key, pbar=pbar, data_type=data_type)
+            cmat[sub], acc[sub], clf_benchmark = _classify_loro(
+                clf=clf, 
+                data=data, 
+                num_classes=num_classes, 
+                subject_num=sub, 
+                routine_key=routine_key, 
+                subject_key=subject_key, 
+                pbar=pbar, 
+                data_type=data_type,                
+                logger=logger
+            )
         else: 
-            cmat[sub], acc[sub] = _classify_kfcv(clf, data, num_classes, subject_num=sub, n_splits=n_splits, pbar=pbar, data_type=data_type)
+            cmat[sub], acc[sub], clf_benchmark = _classify_kfcv(
+                clf=clf, 
+                data=data, 
+                num_classes=num_classes, 
+                subject_num=sub, 
+                n_splits=n_splits, 
+                pbar=pbar, 
+                data_type=data_type,
+                logger=logger
+            )
         
         logprint(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
         pickle.dump([cmat, acc], open(res_fname, 'wb'))
@@ -75,7 +102,11 @@ def _classify_loro(clf, data, num_classes,
         X, y, routs = np.squeeze(list(subset['mag'])), np.array(subset['gesture']), np.array(subset[routine_key])
 
     cm = np.zeros((num_classes, num_classes))
-        
+    clf_benchmark = {
+        'train': [], 
+        'infer': []
+    } 
+    
     for rt in routines:
         logprint(logger, 'debug', f'Excluding routine {rt}')
         test_idx = (routs == rt)     
@@ -86,17 +117,21 @@ def _classify_loro(clf, data, num_classes,
         
         logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
         
-        clf.fit(X_train, y_train) # Train
+        _, train_time = fn_timer(clf.fit, X_train, y_train)
+        clf_benchmark['train'].append(train_time/len(y_train))
+        
         # Validate
         logprint(logger, 'debug', f'Validation Accuracy: {clf.score(X_val, y_val)}') 
         
-        y_pred = clf.predict(X_test) # Test
+        y_pred, infer_time = fn_timer(clf.predict, X_test) # Test
+        clf_benchmark['infer'].append(infer_time/len(y_test))
+        
         cm += confusion_matrix(y_test, y_pred)
          
         if pbar is not None:
             pbar.update(1)
     
-    return cm, get_accuracy(cm)
+    return cm, get_accuracy(cm), clf_benchmark
 
 def _classify_kfcv(clf, data, num_classes, 
                     subject_num, n_splits=4, 
@@ -114,6 +149,10 @@ def _classify_kfcv(clf, data, num_classes,
         X, y = np.squeeze(list(subset['mag'])), np.array(subset['gesture'])
     
     cm = np.zeros((num_classes, num_classes))
+    clf_benchmark = {
+        'train': [], 
+        'infer': []
+    } 
     
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     for train, test in kf.split(X, y):
@@ -122,20 +161,25 @@ def _classify_kfcv(clf, data, num_classes,
         
         logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
         
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
+        _, train_time = fn_timer(clf.fit, X_train, y_train)
+        clf_benchmark['train'].append(train_time/len(y_train))
+        # clf.fit(X_train, y_train)
+        
+        y_pred, infer_time = fn_timer(clf.predict, X_test)
+        clf_benchmark['infer'].append(infer_time/len(y_test))
+        # y_pred = clf.predict(X_test)
+        
         cm += confusion_matrix(y_test, y_pred)
         
         if pbar is not None:
             pbar.update(1) 
 
-    return cm, get_accuracy(cm)
+    return cm, get_accuracy(cm), clf_benchmark
 
 def get_classifier_obj(classifier, **kwargs): 
     '''
     - SVM with GAK is seen to ba a good alternative to 1-NN with DTW since the latter is not a true distance. Kernel Options: gak, rbf, poly, sigmoid
     - LDA: eigen, lsqr
-    - 
     '''
     dt = DecisionTreeClassifier(max_depth=kwargs.get('depth', 5)) 
     dist_clfs = {
