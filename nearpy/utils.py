@@ -1,11 +1,18 @@
 import math 
 import os 
+import time 
 import numpy as np 
 import pandas as pd
 from pathlib import Path 
 from nptdms import TdmsFile
 from scipy.signal import decimate
 
+def fn_timer(func, *args, **kwargs): 
+    st_time = time.time()
+    func_result = func(*args, **kwargs)
+    en_time = time.time()
+    return func_result, en_time - st_time 
+    
 def get_accuracy(cm):
     if type(cm) is dict:
         num_classes = cm[list(cm.keys())[0]].shape[0]

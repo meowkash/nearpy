@@ -13,15 +13,15 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 
-from ..utils import get_accuracy
+from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn, logprint
 from ..plots import plot_pretty_confusion_matrix
     
 def classify_gestures(data, base_path, clf, data_type='time',
                  subject_key='subject', routine_key='routine', 
                  class_key='gesture', exp_name='kfold', 
-                 exp_type='kfcv', n_splits=4, visualize=True, 
-                 benchmark=False, logger=None):
+                 exp_type='kfcv', n_splits=4, 
+                 visualize=True, logger=None):
     '''
     Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
     '''
@@ -60,8 +60,7 @@ def classify_gestures(data, base_path, clf, data_type='time',
                 routine_key=routine_key, 
                 subject_key=subject_key, 
                 pbar=pbar, 
-                data_type=data_type,
-                benchmark=benchmark,
+                data_type=data_type,                
                 logger=logger
             )
         else: 
@@ -73,7 +72,6 @@ def classify_gestures(data, base_path, clf, data_type='time',
                 n_splits=n_splits, 
                 pbar=pbar, 
                 data_type=data_type,
-                benchmark=benchmark,
                 logger=logger
             )
         
@@ -91,8 +89,7 @@ def classify_gestures(data, base_path, clf, data_type='time',
 def _classify_loro(clf, data, num_classes, 
                     subject_num, routine_key, 
                     subject_key, random_state=42, 
-                    pbar=None, data_type='time', 
-                    benchmark=False, logger=None): 
+                    pbar=None, data_type='time', logger=None): 
     subset_map = { subject_key: subject_num }
     routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
     if data_type == 'time':
@@ -120,11 +117,15 @@ def _classify_loro(clf, data, num_classes,
         
         logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
         
-        clf.fit(X_train, y_train) # Train
+        _, train_time = fn_timer(clf.fit, X_train, y_train)
+        clf_benchmark['train'].append(train_time/len(y_train))
+        
         # Validate
         logprint(logger, 'debug', f'Validation Accuracy: {clf.score(X_val, y_val)}') 
         
-        y_pred = clf.predict(X_test) # Test
+        y_pred, infer_time = fn_timer(clf.predict, X_test) # Test
+        clf_benchmark['infer'].append(infer_time/len(y_test))
+        
         cm += confusion_matrix(y_test, y_pred)
          
         if pbar is not None:
@@ -135,7 +136,7 @@ def _classify_loro(clf, data, num_classes,
 def _classify_kfcv(clf, data, num_classes, 
                     subject_num, n_splits=4, 
                     random_state=42, pbar=None, 
-                    data_type='time', benchmark=False, logger=None):
+                    data_type='time', logger=None):
     if data_type == 'time':
         # If we are working with non-feature datasets, we need to adapt our data 
         X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
@@ -160,8 +161,14 @@ def _classify_kfcv(clf, data, num_classes,
         
         logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
         
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
+        _, train_time = fn_timer(clf.fit, X_train, y_train)
+        clf_benchmark['train'].append(train_time/len(y_train))
+        # clf.fit(X_train, y_train)
+        
+        y_pred, infer_time = fn_timer(clf.predict, X_test)
+        clf_benchmark['infer'].append(infer_time/len(y_test))
+        # y_pred = clf.predict(X_test)
+        
         cm += confusion_matrix(y_test, y_pred)
         
         if pbar is not None:

@@ -37,19 +37,51 @@ def plot_pretty_confusion_matrix(cmat, gestures, cmap='Greens', sub_id=None, sav
         _plot_pretty_confusion_matrix(cc, gestures, plot_title, cmap, save, spath)
 
 def _plot_pretty_confusion_matrix(cm, gestures, plot_title, cmap, save=False, save_path=None):
-    # acc = sum([cm[i, i] for i in range(num_gestures)])/np.concatenate(cm).sum()
     acc = get_accuracy(cm)
 
     cm = np.round(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], 2)
     mask = (cm == 0)
     
-    fig = plt.figure(dpi=200)
-    sns.heatmap(cm, annot=True, xticklabels=gestures, 
-                yticklabels=gestures, cmap=cmap, mask=mask,
-                annot_kws={"fontname":"serif", "fontsize":11}, square=True)
-    plt.ylabel('Actual', fontsize=14, fontname='serif')
-    plt.xlabel('Predicted',fontsize=14, fontname='serif')
-    plt.title(f'{plot_title}: {round(acc*100, 2)}%', fontsize=14, fontname='serif') 
+    fig, ax = plt.subplots(figsize=(8, 7), dpi=300)
+    
+    plt.rcParams.update({
+        'font.family': 'sans-serif',
+        'font.sans-serif': ['Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans'],
+    })
+    
+    sns.heatmap(
+        cm, 
+        annot=True, 
+        xticklabels=gestures, 
+        yticklabels=gestures, 
+        cmap=cmap,
+        linewidths=0.5,
+        mask=mask,
+        cbar_kws={
+            "shrink": 0.8, 
+            "label": "Proportion", 
+            "drawedges": False,
+            "ticks": [0, 0.25, 0.5, 0.75, 1.0]
+        },
+        annot_kws={
+            'weight': 'medium',  
+            'fontsize': 14
+        }, 
+        square=True
+    )
+    
+    ax.set_ylabel('Actual', fontsize=18)
+    ax.set_xlabel('Predicted', fontsize=18)
+    
+    ax.set_title(f'{plot_title}: {round(acc*100, 2)}%', fontsize=18, fontweight='bold') 
+    
+    # Set ticks on both sides of axes
+    ax.tick_params(axis='both', which='both', length=0)
+    ax.set_xticklabels(gestures, rotation=45, ha='right')
+    ax.set_yticklabels(gestures, rotation=0)
+
+    # Adjust layout
+    plt.tight_layout()
     
     if save:
         plt.savefig(save_path)
