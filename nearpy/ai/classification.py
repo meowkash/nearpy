@@ -17,12 +17,19 @@ from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn 
 from ..utils.logs import log_print
 from ..plots import plot_pretty_confusion_matrix
-    
-def classify_gestures(data, base_path, clf, data_type='time',
-                 subject_key='subject', routine_key='routine', 
-                 class_key='gesture', exp_name='kfold', 
-                 exp_type='kfcv', n_splits=4, 
-                 visualize=True, logger=None):
+
+def classify_gestures(data, 
+                      save_path, 
+                      clf, 
+                      data_type='time',
+                      subject_key='subject', 
+                      routine_key='routine', 
+                      class_key='gesture', 
+                      exp_name='kfold', 
+                      exp_type='kfcv', 
+                      n_splits=4, 
+                      visualize=True, 
+                      logger=None):
     '''
     Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
     '''
@@ -85,7 +92,10 @@ def classify_gestures(data, base_path, clf, data_type='time',
     log_print(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
     
     if visualize:
-        plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=base_path)
+        plot_pretty_confusion_matrix(cmat, 
+                                     classes, 
+                                     save=True, 
+                                     save_path=save_path)
         
 def _classify_loro(clf, data, num_classes, 
                     subject_num, routine_key, 
@@ -203,7 +213,8 @@ def get_classifier_obj(classifier, **kwargs):
         clf = dist_clfs[classifier]
     else: 
         # Ensemble by default
-        clf = VotingClassifier(estimators=feat_clfs.items(), voting=kwargs.get('voting', 'hard'))    
+        clf = VotingClassifier(estimators=list(feat_clfs.items()), 
+                               voting=kwargs.get('voting', 'hard'))    
     
     return clf
 
