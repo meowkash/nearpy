@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from pathlib import Path
 
-from ..logs import log_print
+from ..utils.logs import log_print
 
 def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
     ''' References: 

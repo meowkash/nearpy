@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split, KFold
 
 from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn 
-from ..logs import log_print
+from ..utils.logs import log_print
 from ..plots import plot_pretty_confusion_matrix
     
 def classify_gestures(data, base_path, clf, data_type='time',

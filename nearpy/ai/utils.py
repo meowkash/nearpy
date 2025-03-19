@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from ..utils import read_tdms
-from ..logs import log_print
+from ..utils.logs import log_print
 from ..preprocess import get_gesture_filter, filter_and_normalize
 
 from .features import generate_feature_df
