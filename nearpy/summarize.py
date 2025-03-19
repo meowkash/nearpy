@@ -177,7 +177,7 @@ for k, v in ges_accs_across_clfs.items():
     # Show plot
     plt.show()
     
-#%%
+#%% Making pretty plots for per-gesture variance
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -185,13 +185,14 @@ import pandas as pd
 from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import Rectangle
 
+rh = 8
 # For each classifier and its corresponding accuracies
 for k, v in ges_accs_across_clfs.items():
     # Create DataFrame
     df = pd.DataFrame(v, columns=list(gestures.values()))
     
     # Create figure with appropriate size and DPI for publication quality
-    plt.figure(figsize=(8, 7), dpi=300)
+    plt.figure(figsize=(rh, 54/rh), dpi=300)
     
     # Set Nature-like style
     sns.set_style("whitegrid")
@@ -280,7 +281,112 @@ for k, v in ges_accs_across_clfs.items():
     
     # Optional: Save the figure
     # plt.savefig(f'{k}_extended_boxplot.png', dpi=600, bbox_inches='tight')
-    
+    print(k)
     # Show plot
     plt.show()
+    
+#%% Making pretty plots for per-subject variance
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+from matplotlib.ticker import MaxNLocator
+from matplotlib.patches import Rectangle
+
+# For each classifier and its corresponding accuracies
+chosen_cmat = ges_accs_across_clfs['results_1_nn_dtw_loro.pkl']
+
+# Each row represents per-gesture accuracy. This will go in our boxplot
+# Create DataFrame
+df2 = pd.DataFrame(np.transpose(chosen_cmat), columns=range(1,21))
+
+# Create figure with appropriate size and DPI for publication quality
+plt.figure(figsize=(9, 6), dpi=300)
+
+# Set Nature-like style
+sns.set_style("whitegrid")
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Arial']
+plt.rcParams['axes.linewidth'] = 0.8
+plt.rcParams['xtick.major.width'] = 0.8
+plt.rcParams['ytick.major.width'] = 0.8
+
+# Create axes
+ax = plt.gca()
+
+# Create standard seaborn boxplot first (to ensure standard appearance)
+boxplot = sns.boxplot(data=df2, width=0.8, palette='deep',
+                      linewidth=0.5, showfliers=False, ax=ax)
+
+# Get the color palette used - directly from seaborn
+colors = sns.color_palette('deep', 20)
+
+# Now add the rectangles from 0 to the bottom of each boxplot
+for i, col in enumerate(df2.columns):
+    # Get the y-coordinate of the bottom of the boxplot (25th percentile/Q1)
+    q1 = df2[col].quantile(0.75)
+    
+    # Get the color for this boxplot
+    box_color = colors[i % len(colors)]
+    
+    # Create a rectangle from 0 to Q1
+    rect = Rectangle(
+        (i - 0.4,  # x position (left edge of boxplot)
+        0),          # y position (starting at 0)
+        0.8,        # width (same as boxplot width)
+        q1,         # height (from 0 to Q1)
+        facecolor=box_color,
+        edgecolor='black',
+        linewidth=0.25,
+        alpha=0.5   # slightly more solid than the boxplot
+    )
+    ax.add_patch(rect)
+
+# Add median value annotations
+medians = df2.median().values
+pos = np.arange(len(medians))
+for tick, median in zip(pos, medians):
+    qb = df2[df2.columns[tick]].quantile(0.25)
+    ax.text(tick, qb - 5, f'{median:.1f}%', 
+           horizontalalignment='center',
+           color='black', fontweight='bold', size=12,
+           bbox=dict(facecolor='white', alpha=0.8, 
+                     edgecolor='none', boxstyle='round,pad=0.1'))
+
+# Set proper limits with some padding
+bottom, top = ax.get_ylim()
+# Ensure the y-axis starts at 0 
+ax.set_ylim(47, min(103, top + 5))
+
+# Set y-axis label
+plt.ylabel('Accuracy (%)', fontsize=18, fontweight='bold')
+
+# Set x-axis label
+plt.xlabel('Subject Number', fontsize=18, fontweight='bold')
+
+# Use integer ticks on y-axis
+# ax.yaxis.set_major_locator(MaxNLocator(nbins=10, integer=True))
+ax.yaxis.set_major_locator(plt.MultipleLocator(10))
+
+# Improve title with classifier name
+plt.title(f'Expression Detection Accuracy', fontsize=18, fontweight='bold')
+
+# Add a subtle grid on the y-axis only
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Rotate x-axis labels if they are long
+plt.xticks(rotation=0, ha='center', fontsize=16, fontweight='bold')
+plt.yticks(fontsize=16, fontweight='bold')
+
+# Add legend
+from matplotlib.patches import Patch
+
+# Adjust layout and save with high quality
+plt.tight_layout()
+
+# Optional: Save the figure
+# plt.savefig(f'{k}_extended_boxplot.png', dpi=600, bbox_inches='tight')
+print(k)
+# Show plot
+plt.show()
     

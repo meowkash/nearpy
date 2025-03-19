@@ -14,7 +14,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold
 
 from ..utils import get_accuracy, fn_timer
-from .utils import get_dataframe_subset, adapt_dataset_to_tslearn, logprint
+from .utils import get_dataframe_subset, adapt_dataset_to_tslearn 
+from ..logs import log_print
 from ..plots import plot_pretty_confusion_matrix
     
 def classify_gestures(data, base_path, clf, data_type='time',
@@ -25,14 +26,14 @@ def classify_gestures(data, base_path, clf, data_type='time',
     '''
     Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
     '''
-    logprint(logger, 'info', f'Experiment: {exp_name}')
+    log_print(logger, 'info', f'Experiment: {exp_name}')
     res_fname = Path(base_path) / f'results_{exp_name}.pkl'
     
     if res_fname.exists(): 
-        logprint(logger, 'debug', 'Loading pre-existing results')
+        log_print(logger, 'debug', 'Loading pre-existing results')
         cmat, acc = pickle.load(open(res_fname, 'rb'))
     else:
-        logprint(logger, 'debug', 'Creating new confusion matrix')
+        log_print(logger, 'debug', 'Creating new confusion matrix')
         cmat, acc = {}, {}
 
     # Set up tqdm 
@@ -75,13 +76,13 @@ def classify_gestures(data, base_path, clf, data_type='time',
                 logger=logger
             )
         
-        logprint(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
+        log_print(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
         pickle.dump([cmat, acc], open(res_fname, 'wb'))
         
     pbar.close()
     
     # Print overall accuracy 
-    logprint(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
+    log_print(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
     
     if visualize:
         plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=base_path)
@@ -108,20 +109,20 @@ def _classify_loro(clf, data, num_classes,
     } 
     
     for rt in routines:
-        logprint(logger, 'debug', f'Excluding routine {rt}')
+        log_print(logger, 'debug', f'Excluding routine {rt}')
         test_idx = (routs == rt)     
         # Train/Val/Test Split with Test being new routine
         X_train, X_val, y_train, y_val = train_test_split(X[~test_idx], y[~test_idx], test_size=0.3, random_state=random_state)
         X_test = X[test_idx]
         y_test = y[test_idx]
         
-        logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
+        log_print(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nVal: {X_val.shape, y_val.shape} \nTest: {X_test.shape, y_test.shape}')
         
         _, train_time = fn_timer(clf.fit, X_train, y_train)
         clf_benchmark['train'].append(train_time/len(y_train))
         
         # Validate
-        logprint(logger, 'debug', f'Validation Accuracy: {clf.score(X_val, y_val)}') 
+        log_print(logger, 'debug', f'Validation Accuracy: {clf.score(X_val, y_val)}') 
         
         y_pred, infer_time = fn_timer(clf.predict, X_test) # Test
         clf_benchmark['infer'].append(infer_time/len(y_test))
@@ -159,7 +160,7 @@ def _classify_kfcv(clf, data, num_classes,
         X_train, y_train = X[train], y[train]
         X_test, y_test = X[test], y[test]
         
-        logprint(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
+        log_print(logger, 'debug', f'Train: {X_train.shape, y_train.shape} \nTest: {X_test.shape, y_test.shape}')
         
         _, train_time = fn_timer(clf.fit, X_train, y_train)
         clf_benchmark['train'].append(train_time/len(y_train))

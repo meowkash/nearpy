@@ -7,6 +7,8 @@ from pathlib import Path
 from nptdms import TdmsFile
 from scipy.signal import decimate
 
+from .logs import log_print
+
 def fn_timer(func, *args, **kwargs): 
     st_time = time.time()
     func_result = func(*args, **kwargs)
@@ -107,7 +109,7 @@ def read_tdms_v2(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False,
         tdmg = tdm['Untitled']
         # List available channels 
         tdm_channels = _prettify_channel_names(tdmg.channels())
-        logprint(logger, 'debug', f'Available Channels: {tdm_channels}')
+        log_print(logger, 'debug', f'Available Channels: {tdm_channels}')
         
         if len(tdm_channels) == 0:
             raise ValueError('TDMS file has no available channels')
@@ -121,7 +123,7 @@ def read_tdms_v2(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False,
             
         # Compute available channels  
         bio_channels, rf_channels = _separate_channel_types(tdm_channels, exclude, get_bio)
-        logprint(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
+        log_print(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
         
         # Load data, ensuring all data elements have the same shape
         rf, bio = {}, {} 
@@ -171,13 +173,3 @@ def tdms_to_csv(fPath):
 def dec_and_trunc(inp, truncate_start, truncate_end, downsample_factor):
     decInp = decimate(inp, downsample_factor)
     return decInp[truncate_start:-truncate_end]
-
-# Log if logger available, else print
-def logprint(logger, level, message, *args, **kwargs):
-    if logger is not None:
-        log_method = getattr(logger, level, None)
-        if log_method:
-            log_method(message, *args, **kwargs)
-    else:
-        print(message)
-            
