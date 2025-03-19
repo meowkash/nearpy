@@ -1,6 +1,6 @@
 [project]
 name = "nearpy"
-version = "0.1.2"
+version = "0.1.4"
 description = "A platform-agnostic signal processing pipeline"
 authors = [
     { name = "Aakash Kapoor", email = "ak2247@cornell.edu" }

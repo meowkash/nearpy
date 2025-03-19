@@ -1,5 +1,4 @@
 import os 
-import time 
 import numpy as np 
 import pandas as pd
 from pathlib import Path 
@@ -8,12 +7,6 @@ from scipy.signal import decimate
 
 from .logs import log_print
 from .mimo import TxRx, get_channels_from_df, split_channels
-
-def fn_timer(func, *args, **kwargs): 
-    st_time = time.time()
-    func_result = func(*args, **kwargs)
-    en_time = time.time()
-    return func_result, en_time - st_time 
     
 # DEPRECATION WARNING
 def read_tdms(fPath, num_channels, bio_channel=None, n_mimo=4,
