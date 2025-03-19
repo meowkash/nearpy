@@ -16,24 +16,35 @@ from sklearn.model_selection import train_test_split, KFold
 from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn, logprint
 from ..plots import plot_pretty_confusion_matrix
-    
-def classify_gestures(data, base_path, clf, data_type='time',
-                 subject_key='subject', routine_key='routine', 
-                 class_key='gesture', exp_name='kfold', 
-                 exp_type='kfcv', n_splits=4, 
-                 visualize=True, logger=None):
+
+def classify_gestures(data, 
+                      save_path, 
+                      clf, 
+                      data_type='time',
+                      subject_key='subject', 
+                      routine_key='routine', 
+                      class_key='gesture', 
+                      exp_name='kfold', 
+                      exp_type='kfcv', 
+                      n_splits=4, 
+                      visualize=True, 
+                      logger=None):
     '''
     Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
     '''
-    logprint(logger, 'info', f'Experiment: {exp_name}')
-    res_fname = Path(base_path) / f'results_{exp_name}.pkl'
+    logprint(logger, 'info', f'Experiment: {exp_name}. \nResults saved at: {str(save_path)}')
+    
+    save_path = Path(save_path) / exp_name
+    Path.mkdir(save_path, exist_ok=True, parents=True)
+    
+    res_fname = Path(save_path) / f'results.pkl'
     
     if res_fname.exists(): 
         logprint(logger, 'debug', 'Loading pre-existing results')
-        cmat, acc = pickle.load(open(res_fname, 'rb'))
+        cmat, acc, clf_benchmark = pickle.load(open(res_fname, 'rb'))
     else:
         logprint(logger, 'debug', 'Creating new confusion matrix')
-        cmat, acc = {}, {}
+        cmat, acc, clf_benchmark = {}, {}, {}
 
     # Set up tqdm 
     total_steps = _get_total_steps(
@@ -76,7 +87,7 @@ def classify_gestures(data, base_path, clf, data_type='time',
             )
         
         logprint(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
-        pickle.dump([cmat, acc], open(res_fname, 'wb'))
+        pickle.dump([cmat, acc, clf_benchmark], open(res_fname, 'wb'))
         
     pbar.close()
     
@@ -84,7 +95,10 @@ def classify_gestures(data, base_path, clf, data_type='time',
     logprint(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
     
     if visualize:
-        plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=base_path)
+        plot_pretty_confusion_matrix(cmat, 
+                                     classes, 
+                                     save=True, 
+                                     save_path=save_path)
         
 def _classify_loro(clf, data, num_classes, 
                     subject_num, routine_key, 
@@ -202,7 +216,8 @@ def get_classifier_obj(classifier, **kwargs):
         clf = dist_clfs[classifier]
     else: 
         # Ensemble by default
-        clf = VotingClassifier(estimators=feat_clfs.items(), voting=kwargs.get('voting', 'hard'))    
+        clf = VotingClassifier(estimators=list(feat_clfs.items()), 
+                               voting=kwargs.get('voting', 'hard'))    
     
     return clf
 
