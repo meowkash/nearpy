@@ -5,7 +5,8 @@ from pathlib import Path
 import numpy as np 
 import pandas as pd
 
-from ..utils import read_tdms, logprint
+from ..utils import read_tdms
+from ..utils.logs import log_print
 from ..preprocess import get_gesture_filter, filter_and_normalize
 
 from .features import generate_feature_df
@@ -22,13 +23,13 @@ def make_dataset(data_path, gestures, num_reps, seg_time, fs,
         with contextlib.suppress(FileNotFoundError):
             dataset_file.unlink()
             filtered_dataset_file.unlink()
-            logprint(logger, 'debug', 'Old dataset files removed for refresh.')
+            log_print(logger, 'debug', 'Old dataset files removed for refresh.')
     
     if dataset_file.exists() and filtered_dataset_file.exists():
-        logprint(logger, 'debug', 'Loading existing datasets.')
+        log_print(logger, 'debug', 'Loading existing datasets.')
         return pd.read_pickle(dataset_file), pd.read_pickle(filtered_dataset_file)
     
-    logprint(logger, 'debug', 'Creating new datasets.')
+    log_print(logger, 'debug', 'Creating new datasets.')
     num_gestures = len(gestures)
     ges_sub = num_gestures * num_reps
     stime = int(seg_time * fs)
@@ -94,7 +95,7 @@ def make_dataset(data_path, gestures, num_reps, seg_time, fs,
     
     dataset.to_pickle(dataset_file)
     filt_dataset.to_pickle(filtered_dataset_file)
-    logprint(logger, 'debug', 'Datasets saved successfully.')
+    log_print(logger, 'debug', 'Datasets saved successfully.')
     
     return dataset, filt_dataset
 
@@ -106,10 +107,10 @@ def make_feature_dataset(dataframe, method, base_path, num_vars=16,
     if refresh:
         with contextlib.suppress(FileNotFoundError):
             dataset_file.unlink()
-            logprint(logger, 'debug', 'Old dataset files removed for refresh.')
+            log_print(logger, 'debug', 'Old dataset files removed for refresh.')
 
     if dataset_file.exists():
-        logprint(logger, 'debug', f'Loading existing {method} feature dataset.')
+        log_print(logger, 'debug', f'Loading existing {method} feature dataset.')
         feat_dataset = pd.read_pickle(open(dataset_file, 'rb'))
     else:
         feat_dataset = generate_feature_df(dataframe, method=method, num_vars=num_vars,
@@ -133,14 +134,14 @@ def load_dataset(base_path, gestures, num_channels=16,
     df, filt_df = make_dataset(data_path, gestures, num_reps, 
                                rep_time, fs, num_channels, ds_ratio, 
                                visualize=visualize, refresh=refresh)
-    logprint(logger, 'debug', 'Loaded dataset')
+    log_print(logger, 'debug', 'Loaded dataset')
         
     long_df, long_filt_df = make_dataset(long_data_path, gestures, num_reps, 
                                          rep_time, fs, num_channels, ds_ratio, visualize=visualize, refresh=refresh)
-    logprint(logger, 'debug', 'Loaded longitudinal dataset')
+    log_print(logger, 'debug', 'Loaded longitudinal dataset')
     
     # Make feature datasets 
-    logprint(logger, 'debug', 'Making feature datasets')
+    log_print(logger, 'debug', 'Making feature datasets')
     ts_feat_df = make_feature_dataset(filt_df, method='ts', base_path=data_path, 
                                       num_vars=num_channels, refresh=refresh)
     ae_feat_df = make_feature_dataset(filt_df, method='ae', base_path=data_path, 
@@ -153,7 +154,7 @@ def load_dataset(base_path, gestures, num_channels=16,
     
     num_subjects = len(set(df['subject']))
     
-    logprint(logger, 'info', f'Dataset contains {num_subjects} subjects. Longitudinal Subjects: {set(long_df["subject"])}')
+    log_print(logger, 'info', f'Dataset contains {num_subjects} subjects. Longitudinal Subjects: {set(long_df["subject"])}')
     
     return df, filt_df, long_df, long_filt_df, ts_feat_df, ae_feat_df, ts_long_feat_df, ae_long_feat_df
 

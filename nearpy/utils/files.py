@@ -1,4 +1,3 @@
-import math 
 import os 
 import time 
 import numpy as np 
@@ -7,55 +6,14 @@ from pathlib import Path
 from nptdms import TdmsFile
 from scipy.signal import decimate
 
+from .logs import log_print
+from .mimo import TxRx, get_channels_from_df, split_channels
+
 def fn_timer(func, *args, **kwargs): 
     st_time = time.time()
     func_result = func(*args, **kwargs)
     en_time = time.time()
     return func_result, en_time - st_time 
-    
-def get_accuracy(cm):
-    if type(cm) is dict:
-        num_classes = cm[list(cm.keys())[0]].shape[0]
-        return _get_dict_accuracy(cm, num_classes)
-    else:
-        num_classes = cm.shape[0]
-        return _get_accuracy(cm, num_classes)    
-
-def _get_accuracy(cm, num_classes):
-    return sum([cm[i, i] for i in range(num_classes)])/np.concatenate(cm).sum()
-
-def _get_dict_accuracy(cm, num_classes):
-    return np.average([_get_accuracy(cc, num_classes) for _, cc in cm.items()])
-
-def TxRx(x, n_mimo=4):
-    return 'Tx' + str((x)%n_mimo +1) + 'Rx' + str(math.ceil((x+1)/n_mimo))
-
-def get_mimo_channels(n_mimo, use_phase=False):
-    # Magnitude channels
-    channels = [TxRx(ch, n_mimo) for ch in range(n_mimo**2)]
-    if use_phase: 
-        phase_channels = [f'{TxRx(ch, n_mimo)}_Phase' for ch in range(n_mimo**2)] 
-        channels.extend(phase_channels)
-    
-    return channels
-
-def _prettify_channel_names(tdms_channels): 
-    clear_name = lambda x: x.split('/')[-1].strip("'>")
-    return [clear_name(str(ch)) for ch in list(tdms_channels)]
-    
-def _separate_channel_types(channel_list, excluded_channels=None, include_biopac=False): 
-    bio_channels = [x for x in channel_list if x.startswith('BIOPAC')]
-    rf_channels = list(set(channel_list) - set(bio_channels))
-     
-    remove_excluded = lambda x: list(set(x) - set(excluded_channels))
-    if excluded_channels is not None: 
-        bio_channels = remove_excluded(bio_channels)
-        rf_channels = remove_excluded(rf_channels)
-    
-    if not include_biopac: 
-        bio_channels = []
-    
-    return bio_channels, rf_channels
     
 # DEPRECATION WARNING
 def read_tdms(fPath, num_channels, bio_channel=None, n_mimo=4,
@@ -106,8 +64,8 @@ def read_tdms_v2(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False,
         # Get TDMS group
         tdmg = tdm['Untitled']
         # List available channels 
-        tdm_channels = _prettify_channel_names(tdmg.channels())
-        logprint(logger, 'debug', f'Available Channels: {tdm_channels}')
+        tdm_channels = get_channels_from_df(tdmg.channels())
+        log_print(logger, 'debug', f'Available Channels: {tdm_channels}')
         
         if len(tdm_channels) == 0:
             raise ValueError('TDMS file has no available channels')
@@ -120,8 +78,8 @@ def read_tdms_v2(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False,
             alen = min(tmp.shape, alen)
             
         # Compute available channels  
-        bio_channels, rf_channels = _separate_channel_types(tdm_channels, exclude, get_bio)
-        logprint(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
+        bio_channels, rf_channels = split_channels(tdm_channels, exclude, get_bio)
+        log_print(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
         
         # Load data, ensuring all data elements have the same shape
         rf, bio = {}, {} 
@@ -171,13 +129,3 @@ def tdms_to_csv(fPath):
 def dec_and_trunc(inp, truncate_start, truncate_end, downsample_factor):
     decInp = decimate(inp, downsample_factor)
     return decInp[truncate_start:-truncate_end]
-
-# Log if logger available, else print
-def logprint(logger, level, message, *args, **kwargs):
-    if logger is not None:
-        log_method = getattr(logger, level, None)
-        if log_method:
-            log_method(message, *args, **kwargs)
-    else:
-        print(message)
-            
