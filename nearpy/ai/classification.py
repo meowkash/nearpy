@@ -34,14 +34,16 @@ def classify_gestures(data,
     Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
     '''
     log_print(logger, 'info', f'Experiment: {exp_name}')
-    res_fname = Path(base_path) / f'results_{exp_name}.pkl'
+    save_path = Path(save_path) / exp_name
+    Path.mkdir(save_path, exist_ok=True, parents=True)
+    res_fname = save_path/ 'results.pkl'
     
     if res_fname.exists(): 
         log_print(logger, 'debug', 'Loading pre-existing results')
-        cmat, acc = pickle.load(open(res_fname, 'rb'))
+        cmat, acc, bench = pickle.load(open(res_fname, 'rb'))
     else:
         log_print(logger, 'debug', 'Creating new confusion matrix')
-        cmat, acc = {}, {}
+        cmat, acc, bench = {}, {}, {}
 
     # Set up tqdm 
     total_steps = _get_total_steps(
@@ -60,7 +62,7 @@ def classify_gestures(data,
     for sub in subjects:
         # Get classifier object 
         if exp_type == 'loro':
-            cmat[sub], acc[sub], clf_benchmark = _classify_loro(
+            cmat[sub], acc[sub], bench[sub] = _classify_loro(
                 clf=clf, 
                 data=data, 
                 num_classes=num_classes, 
@@ -72,7 +74,7 @@ def classify_gestures(data,
                 logger=logger
             )
         else: 
-            cmat[sub], acc[sub], clf_benchmark = _classify_kfcv(
+            cmat[sub], acc[sub], bench[sub] = _classify_kfcv(
                 clf=clf, 
                 data=data, 
                 num_classes=num_classes, 
@@ -84,7 +86,7 @@ def classify_gestures(data,
             )
         
         log_print(logger, 'info', f'Subject {sub} Accuracy: {acc[sub]}')
-        pickle.dump([cmat, acc], open(res_fname, 'wb'))
+        pickle.dump([cmat, acc, bench], open(res_fname, 'wb'))
         
     pbar.close()
     

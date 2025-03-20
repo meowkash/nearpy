@@ -86,7 +86,9 @@ def pretty_boxplot(data,
     ax.yaxis.set_major_locator(plt.MultipleLocator(10))
 
     # Aesthetics
-    plt.title(f'Expression Detection Accuracy', fontsize=18, fontweight='bold')
+    plt.title(f'Expression Detection Accuracy', 
+              fontsize=18, 
+              fontweight='bold')
     
     # Add a subtle grid on the y-axis only
     ax.grid(axis='y', linestyle='--', alpha=0.7)
@@ -100,5 +102,58 @@ def pretty_boxplot(data,
                fontsize=16, 
                fontweight='bold')
     
+    plt.tight_layout()
+    plt.show()
+    
+def pretty_scatterplot(x: list[float],
+                       y: list[float],
+                       labels: list[str], 
+                       figsize: tuple[float, float] = (9, 6),
+                       x_title: str = 'Time', 
+                       x_label: str = 'Time (ms)',
+                       y_title: str = 'Accuracy',
+                       y_label: str = 'Accuracy (%)', 
+                       color_map: str = 'deep',
+                       
+                    ) -> None:
+    df = pd.DataFrame({ x_title: x, 
+                        y_title: y,
+                        'labels': labels
+                    })
+
+    # Make figure
+    plt.figure(figsize=figsize, dpi=300)    
+    sns.set_style('whitegrid')
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ['Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans']
+    plt.rcParams['axes.linewidth'] = 0.75
+    plt.rcParams['xtick.major.width'] = 0.8
+    plt.rcParams['ytick.major.width'] = 0.8
+    
+    ax = plt.gca() 
+    sns.scatterplot(data=df,
+                    x=x_title,
+                    y=y_title,
+                    s=120,  # Point size
+                    hue='Label',
+                    alpha=1,
+                    palette=color_map,
+                    ax=ax)
+    
+    # Aesthetics
+    plt.xlabel(x_label, 
+               fontsize=18, 
+               fontweight='bold')
+    plt.ylabel(y_label, 
+               fontsize=18, 
+               fontweight='bold')
+    plt.title('Time vs Accuracy Scatter Plot', 
+              fontsize=18, 
+              fontweight='bold')
+    
+    # Add a subtle grid on the y-axis only
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Adjust layout to make room for labels
     plt.tight_layout()
     plt.show()
