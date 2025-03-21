@@ -1,4 +1,4 @@
-from lets_plot import *
+from lets_plot import theme, element_text, element_rect, element_line
 
 DEFAULT_PLOT_STYLE = theme(axis_title_x=element_text(size=18, face='bold', family='sans'),
                     axis_text_x=element_text(size=16, family='sans'),
@@ -45,7 +45,5 @@ def BBC_THEME(show_x_axis=True):
         panel_background='blank',
         strip_text=element_text(size=16, hjust=0),
     )
-    # if show_x_axis:
-    #     result += coord_cartesian(ylim=[0, None]) + scale_y_continuous(expand=[.15, 0])
 
     return result

@@ -262,44 +262,6 @@ class GRUNet(L.LightningModule):
         self.log('test_mse', self.test_mse, prog_bar=True)
         self.log('test_mae', self.test_mae, prog_bar=True)
         
-        # For the first batch, visualize predictions
-        if batch_idx == 0 and self.logger is not None:
-            try:
-                # Plot the first 3 samples of the batch
-                num_samples = min(3, x.size(0))
-                fig, axes = plt.subplots(num_samples, 1, figsize=(10, 3 * num_samples))
-                
-                # Make axes a list if there's only one sample
-                if num_samples == 1:
-                    axes = [axes]
-                
-                for i in range(num_samples):
-                    ax = axes[i]
-                    
-                    # Get the input, prediction, and ground truth for this sample
-                    input_seq = x[i, 0].detach().cpu().numpy()
-                    pred_seq = y_hat[i].detach().cpu().numpy()
-                    true_seq = y[i].detach().cpu().numpy()
-                    
-                    # Plot
-                    time_input = np.arange(len(input_seq))
-                    time_output = np.arange(len(input_seq), len(input_seq) + len(pred_seq))
-                    
-                    ax.plot(time_input, input_seq, 'b-', label='Input (Volume)')
-                    ax.plot(time_output, true_seq, 'g-', label='True (Pressure)')
-                    ax.plot(time_output, pred_seq, 'r--', label='Predicted (Pressure)')
-                    
-                    ax.set_title(f'Sample {i+1}')
-                    ax.legend()
-                    ax.grid(True)
-                
-                plt.tight_layout()
-                
-                # Log figure to TensorBoard
-                self.logger.experiment.add_figure('test_predictions', fig, self.global_step)
-            except Exception as e:
-                print(f"Warning: Could not create visualization: {e}")
-        
         return loss
     
     def configure_optimizers(self):

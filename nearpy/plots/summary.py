@@ -118,7 +118,7 @@ def pretty_scatterplot(x: list[float],
                     ) -> None:
     df = pd.DataFrame({ x_title: x, 
                         y_title: y,
-                        'labels': labels
+                        'Label': labels
                     })
 
     # Make figure
@@ -150,6 +150,10 @@ def pretty_scatterplot(x: list[float],
     plt.title('Time vs Accuracy Scatter Plot', 
               fontsize=18, 
               fontweight='bold')
+    plt.legend(fontsize=14,  
+               loc='lower right', 
+               frameon=True, 
+               edgecolor='black')
     
     # Add a subtle grid on the y-axis only
     ax.grid(axis='y', linestyle='--', alpha=0.7)
