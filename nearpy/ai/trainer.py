@@ -1,52 +1,18 @@
 from pathlib import Path
 import numpy as np 
-import seaborn as sns 
-import matplotlib.pyplot as plt 
 
-import torch 
-from torch import nn, optim
+from .callbacks import VisualizePredictions 
+
 import lightning as L
-from lightning.pytorch.callbacks import Callback, LearningRateMonitor, ModelCheckpoint, EarlyStopping
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
-
-# DEPRECATION WARNING: THIS IS NO LONGER USED 
-class LightRunner(L.LightningModule):
-    def __init__(self, model, num_classes, loss=None, optimizer=None):
-        super().__init__()
-        self.model = model
-        self.num_classes = num_classes
-        if loss is None:
-            self.loss = nn.CrossEntropyLoss()
-            # Use nn.functional.mse_loss() for auto-encoder
-        else:
-            self.loss = loss
-        self.optimizer = optimizer
-
-    def training_step(self, batch, _):
-        x, y = batch
-        x_hat = self.model(x)
-        loss = self.loss(x_hat.view(x_hat.shape[0], -1), y.long()) 
-        self.log("train_loss", loss)
-        return loss
-    
-    def validation_step(self, batch, _):
-        # This may be buggy 
-        x, y = batch
-        x_hat = self.model(x.float())
-        val_loss = self.loss(x_hat.view(x_hat.shape[0], -1), y.long())
-        self.log("val_loss", val_loss)
-
-    def configure_optimizers(self):
-        if self.optimizer is not None:
-            return self.optimizer
-        else:
-            self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
-            return self.optimizer
-
 
 def train_and_evaluate(model, 
                        config: dict, 
-                       datamodule):
+                       datamodule: L.LightningDataModule,
+                       plot_interval: int = 5, 
+                       plot_indices: list[int] = None,
+                       num_samples: int = 5):
     # Reproducibility 
     L.seed_everything(42, workers=True)
 
@@ -71,7 +37,15 @@ def train_and_evaluate(model,
     #  (Optional) Enable for early stopping
     early_callback = EarlyStopping(monitor='val_loss') 
     
-    plot_callback = VisualizePredictions()
+    if plot_indices is None: 
+        max_idx = len(datamodule.test_dataset) - 1 
+        plot_indices = np.random.randint(0, max_idx, size=num_samples)
+    print(plot_indices)
+    plot_callback = VisualizePredictions(
+        plot_interval=plot_interval,
+        data_indices=plot_indices,
+        num_samples=num_samples
+    )
     
     logger  = TensorBoardLogger(base_path/'logs', name=exp_name)
     
@@ -102,134 +76,3 @@ def train_and_evaluate(model,
     
     # Analyze learning rates using Tensorboard
     return model, trainer
-
-
-class VisualizePredictions(Callback):
-    """
-    Lightning callback to visualize random test samples at specified epoch intervals.
-    """
-    def __init__(
-        self,
-        plot_interval: int = 5,
-        num_samples: int = 4,
-        figsize: tuple[int, int] = (6, 8),
-        data_indices: list[int] = None,
-    ):
-        """
-        Args:
-            plot_interval: Visualize predictions every N epochs
-            num_samples: Number of random samples to visualize
-            figsize: Figure size
-            random_seed: For reproducible sampling
-            plot_fn: Custom plotting function
-            data_indices: Specific indices to visualize instead of random samples
-        """
-        super().__init__()
-        self.plot_interval = plot_interval
-        self.num_samples = num_samples
-        self.figsize = figsize
-        self.data_indices = data_indices
-        
-    def on_validation_epoch_end(self, trainer, module):
-        """ Run visualization at the end of validation epochs.
-        trainer: Lightning trainer
-        module: LightningModule or LightningDataModule
-        """
-        
-        epoch = trainer.current_epoch
-        print(trainer.callback_metrics.keys())
-        
-        test_loss = trainer.callback_metrics.get('test_loss', 0)
-        
-        if epoch % self.plot_interval != 0:
-            return
-        
-        dataloader = trainer.datamodule.test_dataloader()
-        device = module.device
-        
-        # Get sample indices
-        if self.data_indices is not None:
-            indices = self.data_indices
-        else:
-            max_idx = len(dataloader.dataset) - 1
-            indices = np.random.randint(0, max_idx, size=self.num_samples)
-            
-        # Using seaborn for plotting
-        fig, axes = plt.subplots(self.num_samples, 3, 
-                               figsize=self.figsize, 
-                               dpi=300)
-        colors = sns.color_palette('husl', self.num_samples*3)
-        
-        sns.set_style('whitegrid')
-         
-        for i, idx in enumerate(indices):
-            sample = dataloader.dataset[idx]
-            x, y = (sample[0], sample[1]) if isinstance(sample, tuple) and len(sample) >= 2 else (sample, None)
-            
-            x_batch = torch.Tensor(x).to(device)
-            
-            # Make prediction
-            if len(x.shape) <= 2: 
-                x_batch = torch.reshape(x_batch, (x_batch.shape[0], 1, -1))
-                
-            with torch.no_grad():
-                module.eval()
-                y_pred = module(x_batch)
-            
-            # Convert tensors to numpy
-            if isinstance(y_pred, torch.Tensor):
-                y_pred = y_pred.squeeze(0).cpu().numpy()
-            if isinstance(x, torch.Tensor):
-                x = x.cpu().numpy()
-            if isinstance(y, torch.Tensor) and y is not None:
-                y = y.cpu().numpy()
-            
-            # Plot
-            # Handle image data (channels-first format)
-            if len(x.shape) == 3 and x.shape[0] in [1, 3]:
-                x_display = np.transpose(x, (1, 2, 0))
-                if x.shape[0] == 1:
-                    x_display = x_display.squeeze(-1)
-                axes[i, 0].imshow(x_display, cmap='gray' if x.shape[0] == 1 else None)
-                axes[i, 0].set_title("Input")
-
-                # If we're in a classification task, show prediction
-                if y is not None and not isinstance(y, np.ndarray):
-                    pred_class = np.argmax(y_pred) if len(y_pred.shape) > 0 else y_pred
-                    ax.set_title(f"True: {y}, Pred: {pred_class}")
-
-            # Handle 1D data (time series, signals)
-            elif len(x.shape) == 1 or (len(x.shape) == 2 and x.shape[0] == 1):
-                if len(x.shape) == 2:
-                    x = x.squeeze(0)
-                
-                sns.lineplot(x, 
-                             ax=axes[i, 0], 
-                             linewidth=3, 
-                             color=colors[3*i])
-                if y is not None and y_pred is not None:
-                    if len(y.shape) <= 1 and len(y_pred.shape) <= 1:
-                        sns.lineplot(y, 
-                                     ax=axes[i, 1], 
-                                     linewidth=3, 
-                                     color=colors[3*i+1])
-                        sns.lineplot(y_pred, 
-                                     ax=axes[i, 2], 
-                                     linewidth=3, 
-                                     color=colors[3*i+2])
-            
-                # Display title for top graph 
-                if i == 0: 
-                    axes[i, 0].set_title('Input')
-                    axes[i, 1].set_title('Target')
-                    axes[i, 2].set_title('Prediction')
-                
-                if i!=len(indices): 
-                    axes[i, 0].set_xticklabels([])
-                    axes[i, 1].set_xticklabels([])
-                    axes[i, 2].set_xticklabels([])
-
-        fig.suptitle(f'Epoch {epoch}. Test Loss: {test_loss}')            
-        fig.supxlabel('Interpolated Time Axis')
-        plt.tight_layout()
-        plt.show()
