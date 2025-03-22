@@ -1,6 +1,7 @@
 from pathlib import Path
 import numpy as np 
 import seaborn as sns 
+import matplotlib.pyplot as plt 
 
 import torch 
 from torch import nn, optim
@@ -136,6 +137,9 @@ class VisualizePredictions(Callback):
         """
         
         epoch = trainer.current_epoch
+        print(trainer.callback_metrics.keys())
+        
+        test_loss = trainer.callback_metrics.get('test_loss', 0)
         
         if epoch % self.plot_interval != 0:
             return
@@ -151,7 +155,7 @@ class VisualizePredictions(Callback):
             indices = np.random.randint(0, max_idx, size=self.num_samples)
             
         # Using seaborn for plotting
-        _, axes = plt.subplots(self.num_samples, 3, 
+        fig, axes = plt.subplots(self.num_samples, 3, 
                                figsize=self.figsize, 
                                dpi=300)
         colors = sns.color_palette('husl', self.num_samples*3)
@@ -162,11 +166,11 @@ class VisualizePredictions(Callback):
             sample = dataloader.dataset[idx]
             x, y = (sample[0], sample[1]) if isinstance(sample, tuple) and len(sample) >= 2 else (sample, None)
             
+            x_batch = torch.Tensor(x).to(device)
+            
             # Make prediction
             if len(x.shape) <= 2: 
-                x_batch = torch.reshape(x, (x.shape[0], 1, -1)).to(device)
-            else:
-                x_batch = torch.Tensor(x).to(device)
+                x_batch = torch.reshape(x_batch, (x_batch.shape[0], 1, -1))
                 
             with torch.no_grad():
                 module.eval()
@@ -181,7 +185,6 @@ class VisualizePredictions(Callback):
                 y = y.cpu().numpy()
             
             # Plot
-            
             # Handle image data (channels-first format)
             if len(x.shape) == 3 and x.shape[0] in [1, 3]:
                 x_display = np.transpose(x, (1, 2, 0))
@@ -202,27 +205,31 @@ class VisualizePredictions(Callback):
                 
                 sns.lineplot(x, 
                              ax=axes[i, 0], 
-                             label='Input',
                              linewidth=3, 
                              color=colors[3*i])
-
                 if y is not None and y_pred is not None:
                     if len(y.shape) <= 1 and len(y_pred.shape) <= 1:
                         sns.lineplot(y, 
                                      ax=axes[i, 1], 
-                                     label='Truth',
                                      linewidth=3, 
                                      color=colors[3*i+1])
                         sns.lineplot(y_pred, 
                                      ax=axes[i, 2], 
-                                     label='Prediction',
                                      linewidth=3, 
                                      color=colors[3*i+2])
             
-            # Default fallback
-            else:
-                ax.text(0.5, 0.5, f"Input: {x.shape}\nOutput: {y_pred.shape}", 
-                       ha='center', va='center', transform=ax.transAxes)
-        
+                # Display title for top graph 
+                if i == 0: 
+                    axes[i, 0].set_title('Input')
+                    axes[i, 1].set_title('Target')
+                    axes[i, 2].set_title('Prediction')
+                
+                if i!=len(indices): 
+                    axes[i, 0].set_xticklabels([])
+                    axes[i, 1].set_xticklabels([])
+                    axes[i, 2].set_xticklabels([])
+
+        fig.suptitle(f'Epoch {epoch}. Test Loss: {test_loss}')            
+        fig.supxlabel('Interpolated Time Axis')
         plt.tight_layout()
         plt.show()

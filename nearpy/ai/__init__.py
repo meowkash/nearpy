@@ -1,5 +1,6 @@
 from .models import *
 from .datamodules import * 
+from .loss import * 
 
 from .trainer import train_and_evaluate
 

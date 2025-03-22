@@ -194,7 +194,7 @@ def get_classifier_obj(classifier, **kwargs):
     - SVM with GAK is seen to ba a good alternative to 1-NN with DTW since the latter is not a true distance. Kernel Options: gak, rbf, poly, sigmoid
     - LDA: eigen, lsqr
     '''
-    dt = DecisionTreeClassifier(max_depth=kwargs.get('depth', 5)) 
+    dt = DecisionTreeClassifier(max_depth=kwargs.get('depth', 6)) 
     dist_clfs = {
         'svc':TimeSeriesSVC(kernel=kwargs.get('metric'), gamma=0.1),
         'kmeans': TimeSeriesKMeans(random_state=42, metric=kwargs.get('metric'), n_clusters=kwargs.get('n_clusters', 9)),

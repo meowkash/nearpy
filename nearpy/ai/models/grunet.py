@@ -1,10 +1,7 @@
 import torch
 import torchmetrics
 from torch import nn 
-from torch.nn import functional as F
 import lightning as L 
-import matplotlib.pyplot as plt 
-import numpy as np
 
 class ConvBNReLU(nn.Module):
     """Simple Conv1d block with BatchNorm and ReLU"""
@@ -22,13 +19,13 @@ class ConvBNReLU(nn.Module):
 
 class GRUNet(L.LightningModule):
     """Simplified encoder-decoder for time series prediction"""
-    
     def __init__(self, 
                  input_channels=1,
                  output_sequence_length=32,
                  hidden_dim=128,
                  num_layers=3,
                  bidirectional=True,
+                 loss_fn=None, 
                  dropout=0.1,
                  learning_rate=1e-3,
                  weight_decay=1e-5):
@@ -54,6 +51,11 @@ class GRUNet(L.LightningModule):
         self.num_layers = num_layers
         self.bidirectional = bidirectional
         
+        if loss_fn is None: 
+            self.loss_fn = nn.MSELoss()
+        else: 
+            self.loss_fn = loss_fn
+            
         # Feature extraction with convolutional layers
         self.encoder_conv = nn.Sequential(
             ConvBNReLU(input_channels, hidden_dim),
@@ -214,7 +216,8 @@ class GRUNet(L.LightningModule):
         y_hat = self(x)
         
         # Calculate loss
-        loss = F.mse_loss(y_hat, y)
+        # loss = F.mse_loss(y_hat, y)
+        loss = self.loss_fn(y_hat, y)
         
         # Log metrics
         self.train_mse(y_hat, y)
@@ -233,7 +236,8 @@ class GRUNet(L.LightningModule):
         y_hat = self(x)
 
         # Calculate loss
-        loss = F.mse_loss(y_hat, y)
+        # loss = F.mse_loss(y_hat, y)
+        loss = self.loss_fn(y_hat, y)
         
         # Log metrics
         self.val_mse(y_hat, y)
@@ -252,7 +256,8 @@ class GRUNet(L.LightningModule):
         y_hat = self(x)
         
         # Calculate loss
-        loss = F.mse_loss(y_hat, y)
+        # loss = F.mse_loss(y_hat, y)
+        loss = self.loss_fn(y_hat, y)
         
         # Log metrics
         self.test_mse(y_hat, y)
