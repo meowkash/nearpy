@@ -34,18 +34,26 @@ def train_and_evaluate(model,
 
     lr_monitor_callback = LearningRateMonitor(logging_interval="epoch")
     
-    #  (Optional) Enable for early stopping
-    early_callback = EarlyStopping(monitor='val_loss') 
-    
     if plot_indices is None: 
         max_idx = len(datamodule.test_dataset) - 1 
         plot_indices = np.random.randint(0, max_idx, size=num_samples)
-    print(plot_indices)
+    
     plot_callback = VisualizePredictions(
         plot_interval=plot_interval,
         data_indices=plot_indices,
         num_samples=num_samples
     )
+    
+    callbacks = [
+        checkpoint_callback, 
+        lr_monitor_callback,
+        plot_callback
+    ]
+    
+    if config.get('early_stopping', False): 
+        #  (Optional) Enable for early stopping
+        early_callback = EarlyStopping(monitor='val_loss') 
+        callbacks.append[early_callback]
     
     logger  = TensorBoardLogger(base_path/'logs', name=exp_name)
     
@@ -57,12 +65,7 @@ def train_and_evaluate(model,
         deterministic=True, 
         check_val_every_n_epoch=1, 
         enable_progress_bar=True, # Uses TQDM Progress Bar by default
-        callbacks=[
-            checkpoint_callback,
-            lr_monitor_callback,
-            early_callback, 
-            plot_callback
-        ], 
+        callbacks=callbacks, 
         log_every_n_steps=1, 
         logger=logger
     )

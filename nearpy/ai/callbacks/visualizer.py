@@ -31,14 +31,14 @@ class VisualizePredictions(Callback):
         self.figsize = figsize
         self.data_indices = data_indices
         
-    def on_test_epoch_end(self, trainer, module):
+    def on_validation_epoch_end(self, trainer, module):
         """ Run visualization at the end of testing epoch. This ensures we have test loss to display
         trainer: Lightning trainer
         module: LightningModule or LightningDataModule
         """
         
         epoch = trainer.current_epoch
-        test_loss = trainer.callback_metrics.get('test_loss', 0)
+        test_loss = trainer.callback_metrics.get('val_loss', 0)
         
         if epoch % self.plot_interval != 0:
             return
@@ -128,7 +128,7 @@ class VisualizePredictions(Callback):
                     axes[i, 1].set_xticklabels([])
                     axes[i, 2].set_xticklabels([])
 
-        fig.suptitle(f'Epoch {epoch}. Test Loss: {test_loss}')            
+        fig.suptitle(f'Epoch {epoch}. Val Loss: {test_loss}')            
         fig.supxlabel('Interpolated Time Axis')
         plt.tight_layout()
         plt.show()
