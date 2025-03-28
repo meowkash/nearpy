@@ -129,11 +129,11 @@ class GRUNet(L.LightningModule):
             Predicted output of shape [batch_size, output_seq_len]
         """
         batch_size = x.size(0)
-    
+        
         # Extract features with convolutional layers
         # This handles arbitrary sequence lengths
         conv_features = self.encoder_conv(x)
-    
+
         conv_features = self.encoder_conv2(conv_features)
     
         # Prepare for LSTM: [batch_size, channels, seq_len] -> [batch_size, seq_len, channels]
@@ -234,7 +234,7 @@ class GRUNet(L.LightningModule):
         x = x.float()
         y = y.float()
         y_hat = self(x)
-
+        
         # Calculate loss
         # loss = F.mse_loss(y_hat, y)
         loss = self.loss_fn(y_hat, y)

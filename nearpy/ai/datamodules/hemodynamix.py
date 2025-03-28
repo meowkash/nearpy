@@ -3,6 +3,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 import lightning as L
+import numpy as np 
 
 class HemodynamixDataset(Dataset):
     def __init__(self, X, y, transform=None):
@@ -15,7 +16,7 @@ class HemodynamixDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load element and transform
-        elem = self.inputs[idx]
+        elem = np.stack(self.inputs[idx]) # This ensures that array is unfolded for multi-variate datasets 
         
         if elem.ndim == 1:
             elem = elem.reshape(1, -1)
@@ -25,7 +26,7 @@ class HemodynamixDataset(Dataset):
             # tsai transforms to use: TSVerticalFlip, TSRandomShift, TSHorizontalFlip, TSRandomTrends, TSWarp
 
         target = self.target[idx]
-
+        
         return elem, target
 
 class HemodynamixDataModule(L.LightningDataModule):
