@@ -49,7 +49,10 @@ def align_and_normalize(sig, ref):
         return minmax_scale(max(sig)-sig)
     else:
         return minmax_scale(sig)
-    
+
+def normalize(x): 
+    return (x-np.min(x))/(np.max(x)-np.min(x))  
+
 def xcorr(x,y):
     """
     Perform Cross-Correlation on x and y (with the same API as MATLAB)
