@@ -20,11 +20,11 @@ def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
     w, h = freqz(taps, fs=fs)
     
     if visualize: 
-        plot_response(w, h)
+        plot_filter_response(taps, fs=fs)
         
     return taps
 
-def load_filter(filename):
+def load_filter(filename: str):
     f_path = Path(__file__).parent / 'saved_filters' / f'{filename}.npz'
     fobj = np.load(f_path)
     
@@ -60,7 +60,8 @@ def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
     
 def detrend(sig, deg=3, logger=None):
     '''
-    Detrend a given signal using a n-degree polynomial. By default, n is chosen to be 3 as it provides the best empirical results
+    Detrend a given signal using a n-degree polynomial. 
+    By default, n is chosen to be 3 as it provides the best empirical results.
     '''
     log_print(logger, 'debug', f'Detrending signal with degree {deg} polynomial fit')
     
@@ -69,21 +70,36 @@ def detrend(sig, deg=3, logger=None):
     return sig - pfit(t)
     
 def spike_filter(sig):
-    # Remove small spikes using medfilt1
-    
+    # Remove small spikes using medfilt1    
     return sig
-
-def dB20(array):
-    with np.errstate(divide='ignore'):
-        return 20 * np.log10(array)
     
-def plot_response(w, h, title='Filter Response'):
+def plot_filter_response(ba, fs=None):
+    if fs is not None: 
+        w, h = freqz(ba[0], ba[1], fs=fs)
+    else: 
+        w, h = freqz(ba[0], ba[1])
+    
     "Utility function to plot response functions"
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(w, 20*np.log10(np.abs(h)))
-    ax.grid(True)
-    ax.set_xlabel('Frequency (Hz)')
-    ax.set_ylabel('Gain (dB)')
+    h_mag = 20*np.log10(np.abs(h))
+    h_phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
     
-    ax.set_title(title)
+    fig, ax = plt.subplots(2, 1, figsize=(5, 5), dpi=300)
+    # Magnitude response 
+    ax[0].plot(w, h_mag, 
+               linewidth=3,
+               color='#3171ad', 
+               label='Magnitude Response')
+    ax[0].set_xticks([])
+    ax[0].set_ylabel('Gain (dB)', fontsize=12)
+    ax[0].legend()
+    # Phase response
+    ax[1].plot(w, h_phase, 
+               linewidth=3,
+               color='#cc7e4e',
+               label='Phase Response')
+    ax[1].set_xlabel('Frequency', fontsize=12)
+    ax[1].set_ylabel('Phase (rad)', fontsize=12)
+    ax[1].legend()
+    
+    fig.tight_layout() 
+    plt.show() 
