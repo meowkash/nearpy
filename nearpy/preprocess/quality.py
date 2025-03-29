@@ -1,5 +1,6 @@
 import numpy as np 
 from scipy import signal 
+from scipy.stats import ecdf 
 
 def get_snr(sig, fs, sig_band, noise_band, nperseg=256, logarithmic=True): 
     '''
@@ -62,3 +63,11 @@ def get_harmonic_ratio(sig, fs, sig_band, harmonic=2, nperseg=256, logarithmic=T
                    logarithmic=logarithmic
                 )
     
+def get_threshold_value(sig, prob_thresh=0.95): 
+    assert (prob_thresh>=0 & prob_thresh <=1), f'Probability threshold must be between 0 and 1. Got {prob_thresh} instead'
+    
+    cdf = ecdf(sig).cdf
+    vals, probs = cdf.quantiles, cdf.probabilities
+    thresh = vals[np.where(probs > prob_thresh)[0][0]]
+    
+    return thresh

@@ -2,8 +2,42 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 import matplotlib.pyplot as plt 
+from scipy.fft import fft
 from librosa.feature import melspectrogram
 from librosa.display import specshow
+
+def _ncs_fft(sig, fs):
+    Y = fft(sig)
+    L = len(sig)
+    L = L - L%2 # Make it even  
+    P2 = abs(Y/L) 
+    P = P2[0:L//2]
+    P[1:-2] = 2*P[1:-2]
+    f = fs*np.arange(0, L/2)/L
+
+    return f, P 
+
+def ncs_fft(sig, fs, plot=False, range=None):
+    f, P = _ncs_fft(sig, fs)
+    
+    if range is not None: 
+        idx = (range[0] < f) & (f < range[1])
+        f = f[idx]
+        P = P[idx]
+        
+    if plot:
+        import matplotlib.pyplot as plt
+        plt.ion()
+        plt.plot(f, P)
+        plt.show()
+        
+    return f, P
+
+def get_peak_harmonic(sig, fs, range=None): 
+    f, P = ncs_fft(sig, fs, range=range)
+    idx = np.argmax(P)
+    
+    return f[idx]
 
 def get_spectrogram(sig, fs, seg_frac=20, perc_overlap=0.5, visualize=False): 
     # We use the same defaults that matlab uses for consistency across code-bases 
@@ -25,7 +59,7 @@ def get_spectrogram(sig, fs, seg_frac=20, perc_overlap=0.5, visualize=False):
     specgram = SFT.spectrogram(sig)
 
     if visualize: 
-        fig, ax = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
+        fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
         t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
         
         ax.set_title('Spectrogram')
