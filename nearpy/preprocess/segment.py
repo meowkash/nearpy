@@ -7,19 +7,22 @@ from scipy.stats import ecdf
 from .utils import normalize
 from .quality import get_snr
 
+# Not really needed but kept as reference implementation
+def split_timewise(sig, fs, start_time, end_time, num_segs): 
+    return np.array_split(sig[start_time*fs:end_time*fs], num_segs)
+
 def get_adaptive_segment_indices(sig, 
+                                 timeAx, 
                                  fs: int, 
                                  method: str, 
                                  prob_thresh: float = 0.9, 
-                                 sig_band: list =None, 
-                                 noise_band: list =None, 
-                                 win_size: int =10, 
-                                 logarithmic: bool =False): 
+                                 sig_band: list = None, 
+                                 noise_band: list = None, 
+                                 win_size: int = 10, 
+                                 logarithmic: bool = False): 
     '''
     Depending upon provided input method, return points for segmentation chosen adaptively (CDF > Thresholded value)
     '''
-    timeAx = np.linspace(0, len(sig)/fs, len(sig))
-    
     if method == 'Abs': 
         proc_sig = np.abs(sig)
     elif method == 'Square': 
@@ -43,12 +46,10 @@ def get_adaptive_segment_indices(sig,
     thresh = vals[np.where(probs > prob_thresh)[0][0]]
     vals = normalize(vals)
     
-    # Plot using thresholded value  
+    # Return markers for plotting
     idx = np.where(proc_sig > thresh)[0]
-    marker_indices = timeAx[idx] 
-    marker_values = normalize(sig)[idx]
     
-    return marker_indices, marker_values, vals, probs
+    return idx, vals, probs
 
 # For a given time series input, get the segment indices 
 def get_segment_indices(sig, window, min_samples, kernel='linear', num_points=4):
