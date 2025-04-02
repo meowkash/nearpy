@@ -21,4 +21,8 @@ def _get_accuracy(confmat, num_classes):
     return sum([confmat[i, i] for i in range(num_classes)])/np.concatenate(confmat).sum()
 
 def _get_dict_accuracy(confmat, num_classes):
-    return np.average([_get_accuracy(cc, num_classes) for _, cc in confmat.items()])
+    # Generate overall confusion matrix and then call _get_accuracy to ensure same formula
+    cc = np.zeros((num_classes, num_classes))
+    for _, cm in confmat.items(): 
+        cc += cm 
+    return _get_accuracy(cc, num_classes)

@@ -6,12 +6,17 @@ import numpy as np
 from tslearn.neighbors import KNeighborsTimeSeriesClassifier
 from tslearn.svm import TimeSeriesSVC
 from tslearn.clustering import TimeSeriesKMeans
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier, AdaBoostClassifier, BaggingClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import (
+    RandomForestClassifier, 
+    VotingClassifier, 
+    AdaBoostClassifier, 
+    BaggingClassifier
+)
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.tree import DecisionTreeClassifier
 
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 
 from ..utils import get_accuracy, fn_timer
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn 
@@ -189,24 +194,38 @@ def _classify_kfcv(clf, data, num_classes,
 
     return cm, get_accuracy(cm), clf_benchmark
 
-def get_classifier_obj(classifier, **kwargs): 
+def get_classifier_obj(config): 
     '''
-    - SVM with GAK is seen to ba a good alternative to 1-NN with DTW since the latter is not a true distance. Kernel Options: gak, rbf, poly, sigmoid
-    - LDA: eigen, lsqr
+    Get a classifier object with either default values or a Grid Search parameter setup 
     '''
-    dt = DecisionTreeClassifier(max_depth=kwargs.get('depth', 6)) 
+    classifier = config.get('classifier')
+    assert classifier is not None, 'There must always be a classifier.'
+    
+    dt = DecisionTreeClassifier(max_depth=config.get('depth', 5)) 
+    
     dist_clfs = {
-        'svc':TimeSeriesSVC(kernel=kwargs.get('metric'), gamma=0.1),
-        'kmeans': TimeSeriesKMeans(random_state=42, metric=kwargs.get('metric'), n_clusters=kwargs.get('n_clusters', 9)),
-        'nn': KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=kwargs.get('metric'))
+        'svc':TimeSeriesSVC(kernel=config.get('metric'), 
+                            gamma=0.1, 
+                            random_state=42),
+        'kmeans': TimeSeriesKMeans(metric=config.get('metric'), 
+                                   n_clusters=config.get('n_clusters', 9),
+                                   random_state=42),
+        'nn': KNeighborsTimeSeriesClassifier(n_neighbors=1, 
+                                             metric=config.get('metric'))
     }
     feat_clfs = {
-        'rforest': RandomForestClassifier(n_estimators=kwargs.get('n_estimators', 10), 
-                                          criterion='log_loss', random_state=42),
-        'lda': LinearDiscriminantAnalysis(solver=kwargs.get('solver', 'svd')), 
-        'adaboost': AdaBoostClassifier(estimator=dt, n_estimators=kwargs.get('n_estimators', 10), 
-                                       algorithm='SAMME', random_state=42), 
-        'bagging': BaggingClassifier(estimator=dt, n_estimators=kwargs.get('n_estimators', 10))
+        'rforest': RandomForestClassifier(n_estimators=config.get('n_estimators', 10), 
+                                          criterion='log_loss', 
+                                          random_state=42),
+        'lda': LinearDiscriminantAnalysis(solver=config.get('solver', 'svd')), 
+        'adaboost': AdaBoostClassifier(estimator=dt, 
+                                       n_estimators=config.get('n_estimators', 10), 
+                                       random_state=42), 
+        'bagging': BaggingClassifier(estimator=dt, 
+                                     n_estimators=config.get('n_estimators', 10), 
+                                     n_jobs=-1, 
+                                     random_state=42), 
+        'qda': QuadraticDiscriminantAnalysis()
     }
     
     if classifier in feat_clfs.keys():
@@ -216,8 +235,14 @@ def get_classifier_obj(classifier, **kwargs):
     else: 
         # Ensemble by default
         clf = VotingClassifier(estimators=list(feat_clfs.items()), 
-                               voting=kwargs.get('voting', 'hard'))    
+                               voting=config.get('voting', 'hard'), 
+                               n_jobs=-1)    
     
+    grid_params = config.get('params')
+    if grid_params is not None: 
+        # Ensure we use all processors 
+        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=-1)
+        
     return clf
 
 def _get_total_steps(data, subject_key, routine_key, exp_type='kfcv', **kwargs):
