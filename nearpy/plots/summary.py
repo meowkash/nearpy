@@ -11,13 +11,20 @@ def pretty_boxplot(data,
                    box_width: float = 0.8,
                    color_map: str = 'deep',
                    y_min: int = 47,
-                   tick_rotation: tuple[int, int] = (0, 0)
+                   tick_rotation: tuple[int, int] = (0, 0),
+                   f_mult: float = None,
+                   title: str = 'Expression Detection Accuracy',
+                   xlabel: str = 'Subject Number'
                 ) -> None: 
     if labels is None: 
-        labels = [f'{i}' for i in range(np.shape(data)[1])]
+        labels = [f'{i}' for i in range(1, np.shape(data)[1]+1)]
     
     # Create dataframe to ease seaborn plotting          
     df = pd.DataFrame(data, columns=labels)
+    
+    # Font correction factor 
+    if f_mult is None:
+        f_mult = np.sqrt(figsize[0]*figsize[1]/54)
     
     # Make figure 
     plt.figure(figsize=figsize, dpi=300)    
@@ -63,12 +70,12 @@ def pretty_boxplot(data,
     pos = np.arange(len(medians))
     
     for tick, median in zip(pos, medians):
-        qb = df[df.columns[tick]].quantile(0.25)
+        qb = df[df.columns[tick]].median()
         ax.text(tick, qb - 5, 
                 f'{median:.1f}%', 
                 horizontalalignment='center',
                 color='black', 
-                fontweight='bold', size=12,
+                fontweight='bold', size=round(12*f_mult),
                 bbox=dict(facecolor='white', 
                           alpha=0.8, 
                           edgecolor='none', 
@@ -79,16 +86,19 @@ def pretty_boxplot(data,
     ax.set_ylim(y_min, min(103, top + 5))
 
     # Set axis labels
-    plt.ylabel('Accuracy (%)', fontsize=18, fontweight='bold')
-    plt.xlabel('Subject Number', fontsize=18, fontweight='bold')
+    plt.ylabel('Accuracy (%)', 
+               fontsize=round(18*f_mult))
+    if xlabel is not None:
+        plt.xlabel(xlabel, 
+                   fontsize=round(18*f_mult))
 
     # Ensure y-axis ticks are multiples of 10 
     ax.yaxis.set_major_locator(plt.MultipleLocator(10))
 
     # Aesthetics
-    plt.title(f'Expression Detection Accuracy', 
-              fontsize=18, 
-              fontweight='bold')
+    plt.title(title, 
+              fontsize=round(20*f_mult),
+              pad=20)
     
     # Add a subtle grid on the y-axis only
     ax.grid(axis='y', linestyle='--', alpha=0.7)
@@ -96,11 +106,11 @@ def pretty_boxplot(data,
     # Rotate x-axis labels if they are long
     plt.xticks(rotation=tick_rotation[0], 
                ha='center', 
-               fontsize=16, 
-               fontweight='bold')
+               fontsize=round(16*f_mult), 
+               fontweight='regular')
     plt.yticks(rotation=tick_rotation[1], 
-               fontsize=16, 
-               fontweight='bold')
+               fontsize=round(16*f_mult), 
+               fontweight='regular')
     
     plt.tight_layout()
     plt.show()
