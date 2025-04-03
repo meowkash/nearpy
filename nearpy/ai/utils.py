@@ -1,5 +1,6 @@
 import numpy as np 
 import contextlib
+import logging 
 from pathlib import Path
 
 import numpy as np 
@@ -11,9 +12,18 @@ from ..preprocess import get_gesture_filter, filter_and_normalize
 
 from .features import generate_feature_df
 
-def make_dataset(data_path, gestures, num_reps, seg_time, fs, 
-                   num_channels, ds_ratio, f_s=15, 
-                   visualize=False, refresh=False, logger=None):
+def make_dataset(data_path: Path, 
+                 gestures: dict, 
+                 num_reps: int, 
+                 seg_time: float,
+                 fs: int, 
+                 num_channels: int, 
+                 ds_ratio: int = 10, 
+                 f_s=15, 
+                 visualize: bool = False, 
+                 refresh: bool = False, 
+                 logger: logging.Logger = None):
+    
     """Loads TDMS files, processes signals, and saves datasets."""
     data_path = Path(data_path)
     dataset_file = data_path / 'dataset.pkl'
@@ -99,9 +109,16 @@ def make_dataset(data_path, gestures, num_reps, seg_time, fs,
     
     return dataset, filt_dataset
 
-def make_feature_dataset(dataframe, method, base_path, num_vars=16, 
-                        data_key='mag', subject_key='subject', routine_key='routine',
-                        label_key='gesture', refresh=False, logger=None): 
+def make_feature_dataset(dataframe: pd.DataFrame, 
+                         method, 
+                         base_path, 
+                         num_vars=16, 
+                         data_key='mag', 
+                         subject_key='subject', 
+                         routine_key='routine',
+                         label_key='gesture', 
+                         refresh=False, 
+                         logger=None): 
     dataset_file = base_path / f'{method}_feat_dataset.pkl'
     
     if refresh:
@@ -141,7 +158,7 @@ def load_dataset(base_path, gestures, num_channels=16,
     log_print(logger, 'debug', 'Loaded longitudinal dataset')
     
     # Make feature datasets 
-    log_print(logger, 'debug', 'Making feature datasets')
+    log_print(logger, 'debug', 'Loading feature datasets')
     ts_feat_df = make_feature_dataset(filt_df, method='ts', base_path=data_path, 
                                       num_vars=num_channels, refresh=refresh)
     ae_feat_df = make_feature_dataset(filt_df, method='ae', base_path=data_path, 
