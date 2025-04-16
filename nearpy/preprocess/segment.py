@@ -19,7 +19,9 @@ def get_adaptive_segment_indices(sig,
                                  sig_band: list = None, 
                                  noise_band: list = None, 
                                  win_size: int = 10, 
-                                 logarithmic: bool = False): 
+                                 logarithmic: bool = False,
+                                 max_gap: int = 10,
+                                 padding: int = 0.05): 
     '''
     Depending upon provided input method, return points for segmentation chosen adaptively (CDF > Thresholded value)
     '''
@@ -49,6 +51,43 @@ def get_adaptive_segment_indices(sig,
     # Return markers for plotting
     idx = np.where(proc_sig > thresh)[0]
     
+    # Only return the largest contiguous block 
+    if len(idx) == 0:
+        return np.array([]), vals, probs
+    
+    # Find continuous blocks with maximum allowed gap
+    blocks = []
+    current_block = [idx[0]]
+    
+    for i in range(1, len(idx)):
+        if idx[i] - idx[i-1] <= max_gap:
+            # This index is within max_gap of the previous one
+            current_block.append(idx[i])
+        else:
+            # Gap is larger than max_gap, start a new block
+            blocks.append(current_block)
+            current_block = [idx[i]]
+    
+    # Add the last block
+    if current_block:
+        blocks.append(current_block)
+    
+    # Find the largest block
+    largest_block = max(blocks, key=len)
+    
+    # Add a little padding if specified
+    if padding is not None:
+        idx[0] = max(idx[0] - padding*fs, 0)
+        idx[-1] = min(idx[-1] + padding*fs, len(sig)-1)
+        
+    # Fill in any gaps within the block
+    idx = np.array(largest_block)
+    if len(idx) > 1:
+        # Create a fully continuous block by filling gaps
+        start = idx[0]
+        end = idx[-1]
+        idx = np.arange(start, end + 1)
+        
     return idx, vals, probs
 
 # For a given time series input, get the segment indices 

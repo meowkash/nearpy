@@ -4,12 +4,14 @@ import torch
 import torch.nn as nn 
 import numpy as np 
 import pandas as pd
+import librosa 
 
 import tsfresh.feature_extraction.feature_calculators as fc
 
 from .models import TimeAutoEncoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
+from ..features import get_temporal_feats
 
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''
@@ -96,29 +98,5 @@ def _get_time_series_feats(sig):
     '''
     Given a time series signal of shape (NxD), return an array of interpretable features (NxM)
     '''
-    mob, comp = _get_hjorth_params(sig)
-    zc = fc.number_crossing_m(sig, 0) # Get zero-crossing
-    svd_ent = fc.fourier_entropy(sig, bins=10)
-    skew = fc.skewness(sig)
-    enrg = fc.abs_energy(sig)
-    cid = fc.cid_ce(sig, True)
-    kurt = fc.kurtosis(sig)
-    med = fc.median(sig)
-    pks = fc.number_peaks(sig, 10)
-    cwt_pks = fc.number_cwt_peaks(sig, 10)
-    var = fc.variance(sig)
-
-    return np.array([mob, comp, zc, svd_ent, skew, enrg, cid, kurt, med, pks, cwt_pks, var])
-
-def _get_hjorth_params(sig): 
-    ''' Returns mobility and complexity, calculated using the same method as antropy. A re-implementation is performed to remove dependency on antropy, which relies upon numba (that does not work with NumPy 2). 
-
-    mobility: sqrt(var(dy/dt)/var(y))
-    complexity: mobility(dy/dt)/mobility(y)
-    '''
-    epsilon = 1e-10 # Added for numerical stability 
-
-    mobility = lambda x: np.sqrt((np.var(np.diff(x)) + epsilon)/(np.var(x) + epsilon))
-    complexity = lambda x: (mobility(np.diff(x)) + epsilon)/(mobility(x) + epsilon)
-
-    return mobility(sig), complexity(sig)
+    feat_dict = get_temporal_feats(sig)
+    return np.array(list(feat_dict.values()))
