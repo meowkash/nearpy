@@ -132,6 +132,7 @@ def _classify_loro(clf,
                 ): 
     subset_map = { subject_key: subject_num }
     routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
+    
     if data_type == 'time':
         X, y, routs = adapt_dataset_to_tslearn(
             data, 
@@ -147,7 +148,7 @@ def _classify_loro(clf,
             subject_key: subject_num,
         }
         subset = get_dataframe_subset(data, subset_map)
-        X, y, routs = np.squeeze(list(subset['mag'])), np.array(subset['gesture']), np.array(subset[routine_key])
+        X, y, routs = np.squeeze(list(subset[data_key])), np.array(subset[class_key]), np.array(subset[routine_key])
 
     cm = np.zeros((num_classes, num_classes))
     clf_benchmark = {
@@ -213,7 +214,7 @@ def _classify_kfcv(clf,
             subject_key: subject_num,
         }
         subset = get_dataframe_subset(data, subset_map)
-        X, y = np.squeeze(list(subset['mag'])), np.array(subset['gesture'])
+        X, y = np.squeeze(list(subset[data_key])), np.array(subset[class_key])
     
     cm = np.zeros((num_classes, num_classes))
     clf_benchmark = {

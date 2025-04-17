@@ -11,13 +11,20 @@ import tsfresh.feature_extraction.feature_calculators as fc
 from .models import TimeAutoEncoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
-from ..features import get_temporal_feats, get_mfcc_feats
+from ..features import get_temporal_feats
 
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''
-def generate_feature_df(dataframe, method, base_path="", num_vars=16, 
-                        data_key='mag', subject_key='subject', routine_key='routine',
-                        label_key='gesture', refresh=False):
+def generate_feature_df(dataframe, 
+                        method, 
+                        base_path="", 
+                        num_vars=16, 
+                        data_key='mag', 
+                        subject_key='subject', 
+                        routine_key='routine',
+                        label_key='gesture', 
+                        refresh=False
+                    ):
     methods = { 
         'ae': _get_ae_feats,
         'ts': _get_time_series_feats, 
@@ -37,7 +44,12 @@ def generate_feature_df(dataframe, method, base_path="", num_vars=16,
     if method == 'ae': 
         # Pre-train AE 
         if refresh:
-            input_size, ae_size = _pretrain_ae(dataframe, data_key=data_key, label_key=label_key, base_path=base_path, num_vars=num_vars)
+            input_size, ae_size = _pretrain_ae(dataframe, 
+                                               data_key=data_key, 
+                                               label_key=label_key, 
+                                               base_path=base_path, 
+                                               num_vars=num_vars
+                                            )
         else:
             input_size = 299
             ae_size = 8
@@ -45,12 +57,15 @@ def generate_feature_df(dataframe, method, base_path="", num_vars=16,
         wrapped_model = AEWrapper(input_size=input_size, encoding_size=ae_size)
         ckpt_path = base_path / 'ckpts' / f'AE_Feat_{str(ae_size)}.ckpt'
         wrapped_model.load_state_dict(torch.load(ckpt_path)['state_dict'])
-        feat_subset = np.apply_along_axis(method_fcn, 2, subset, model=wrapped_model)
+        feat_subset = np.apply_along_axis(method_fcn, 2, subset, 
+                                          model=wrapped_model)
     else:
         # Extract features
         feat_subset = np.apply_along_axis(method_fcn, 2, subset)
     
     feat_subset = feat_subset.reshape((n_elems, -1))
+    
+    print(routine_key, set(dataframe[routine_key]))
     
     # Create a complete dataset
     feat_df = pd.DataFrame({

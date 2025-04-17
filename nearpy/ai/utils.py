@@ -118,7 +118,8 @@ def make_feature_dataset(dataframe: pd.DataFrame,
                          routine_key='routine',
                          label_key='gesture', 
                          refresh=False, 
-                         logger=None): 
+                         logger=None
+                        ): 
     dataset_file = base_path / f'{method}_feat_dataset.pkl'
     
     if refresh:
@@ -130,9 +131,13 @@ def make_feature_dataset(dataframe: pd.DataFrame,
         log_print(logger, 'debug', f'Loading existing {method} feature dataset.')
         feat_dataset = pd.read_pickle(open(dataset_file, 'rb'))
     else:
-        feat_dataset = generate_feature_df(dataframe, method=method, num_vars=num_vars,
-                                           data_key=data_key, label_key=label_key, 
-                                           subject_key=subject_key, routine_key=routine_key,
+        feat_dataset = generate_feature_df(dataframe, 
+                                           method=method, 
+                                           num_vars=num_vars,
+                                           data_key=data_key, 
+                                           label_key=label_key, 
+                                           subject_key=subject_key, 
+                                           routine_key=routine_key,
                                            refresh=refresh)
         feat_dataset.to_pickle(dataset_file)
     
