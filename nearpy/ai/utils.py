@@ -176,17 +176,22 @@ def load_dataset(base_path, gestures, num_channels=16,
     return df, filt_df, long_df, long_filt_df, ts_feat_df, ae_feat_df, ts_long_feat_df, ae_long_feat_df
 
 # tslearn dataset spec  is (num_cases, time_steps, num_channels)
-def adapt_dataset_to_tslearn(dataset, num_channels=16, 
-                         data_key='mag', label_key='gesture', 
-                         subset_key='subject', subset_val=None):
-    if subset_val is not None:
-        dft = dataset.loc[dataset[subset_key] == subset_val] 
-    else:
-        dft = dataset
+def adapt_dataset_to_tslearn(data: pd.DataFrame, 
+                             num_vars: int = 16,
+                             subject_num: int = None,
+                             class_key: str = 'gesture', 
+                             data_key: str = 'mag', 
+                             routine_key: str = 'routine',
+                             subject_key: str = 'subject', 
+                            ):
+    subset_map = {
+        subject_key: subject_num
+    }
+    dft = get_dataframe_subset(data, subset_map)
     
-    data = np.array([np.transpose(np.reshape(dft.iloc[i][data_key], (num_channels, -1))) for i in range(len(dft))])
-    label = dft[label_key].to_numpy()
-    routine = dft['routine'].to_numpy()
+    data = np.array([np.transpose(np.reshape(dft.iloc[i][data_key], (num_vars, -1))) for i in range(len(dft))])
+    label = dft[class_key].to_numpy()
+    routine = dft[routine_key].to_numpy()
     
     return data, label, routine 
 

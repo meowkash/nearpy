@@ -11,7 +11,7 @@ import tsfresh.feature_extraction.feature_calculators as fc
 from .models import TimeAutoEncoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
-from ..features import get_temporal_feats
+from ..features import get_temporal_feats, get_mfcc_feats
 
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''

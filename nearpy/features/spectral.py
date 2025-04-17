@@ -13,8 +13,15 @@ def get_cwt_feats(df, f_low=0.1, f_high=15, fs=100, num_levels=30, wavelet='cgau
     
     return df.apply(cwt_extractor)
 
-def get_mfcc_feats(audio_data, sample_rate=22050, n_mfcc=13, 
-                n_fft=2048, hop_length=512, fmin=0, fmax=None):
+def get_mfcc_feats(audio, 
+                   sample_rate: int = 22050, 
+                   n_mfcc: int = 13, 
+                   n_fft: int = 2048, 
+                   hop_length: int = 512, 
+                   fmin: float = 0, 
+                   fmax: float = None,
+                   diffs: bool = False 
+                ):
     '''
     Extract MFCC features from an audio waveform.
     
@@ -40,9 +47,10 @@ def get_mfcc_feats(audio_data, sample_rate=22050, n_mfcc=13,
     mfccs : numpy.ndarray
         MFCC features with shape (n_mfcc, n_frames)
     '''
+    audio = np.array(audio, dtype=float)
     
     mfccs = librosa.feature.mfcc(
-        y=audio_data, 
+        y=audio, 
         sr=sample_rate, 
         n_mfcc=n_mfcc,
         n_fft=n_fft,
@@ -52,30 +60,11 @@ def get_mfcc_feats(audio_data, sample_rate=22050, n_mfcc=13,
     )
     
     # Normalize MFCCs to improve performance 
-    mfccs_normalized = librosa.util.normalize(mfccs, axis=1)
+    mfcc_feats = librosa.util.normalize(mfccs, axis=1)
     
-    return mfccs_normalized
-
-def get_mfcc_delta_feats(audio_data, sample_rate=22050, n_mfcc=13, 
-                                n_fft=2048, hop_length=512):
-    """
-    Extract MFCC features with delta and delta-delta coefficients.
-    
-    Returns:
-    --------
-    feature_vector : numpy.ndarray
-        Combined MFCC features with derivatives
-    """
-    # Get base MFCCs
-    mfccs = extract_mfcc(audio_data, sample_rate, n_mfcc, n_fft, hop_length)
-    
-    # Calculate delta features (first-order derivatives)
-    delta_mfccs = librosa.feature.delta(mfccs)
-    
-    # Calculate delta-delta features (second-order derivatives)
-    delta2_mfccs = librosa.feature.delta(mfccs, order=2)
-    
-    # Stack all features
-    feature_vector = np.vstack([mfccs, delta_mfccs, delta2_mfccs])
-    
-    return feature_vector
+    if diffs: 
+        delta_mfccs = librosa.feature.delta(mfcc_feats)
+        delta2_mfccs = librosa.feature.delta(mfcc_feats, order=2)
+        mfcc_feats = np.vstack([mfcc_feats, delta_mfccs, delta2_mfccs])
+        
+    return mfcc_feats

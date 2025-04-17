@@ -2,6 +2,7 @@ import pickle
 from tqdm import tqdm
 from pathlib import Path 
 import numpy as np
+import pandas as pd 
 
 from tslearn.neighbors import KNeighborsTimeSeriesClassifier
 from tslearn.svm import TimeSeriesSVC
@@ -24,19 +25,22 @@ from ..utils.logs import log_print
 from ..plots import plot_pretty_confusion_matrix
 
 def classify_gestures(data, 
-                      save_path, 
+                      save_path: Path, 
                       clf, 
-                      data_type='time',
-                      subject_key='subject', 
-                      routine_key='routine', 
-                      class_key='gesture', 
-                      exp_name='kfold', 
-                      exp_type='kfcv', 
-                      n_splits=4, 
-                      visualize=True, 
-                      logger=None):
+                      data_type: str = 'time',
+                      class_key: str = 'gesture', 
+                      data_key: str = 'mag', 
+                      routine_key: str = 'routine', 
+                      subject_key: str = 'subject', 
+                      exp_name: str = 'kfold', 
+                      exp_type: str = 'kfcv', 
+                      n_splits: int = 4, 
+                      num_vars: int  = 16, 
+                      visualize: bool = True, 
+                      logger = None):
     '''
-    Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. Optionally, benchmarks classifier's inference performance  
+    Performs k-Fold Cross-Validation and Leave-One-Routine Out Testing for multi-class classification. 
+    Optionally, benchmarks classifier's inference performance  
     '''
     log_print(logger, 'info', f'Experiment: {exp_name}')
     save_path = Path(save_path) / exp_name
@@ -72,10 +76,13 @@ def classify_gestures(data,
                 data=data, 
                 num_classes=num_classes, 
                 subject_num=sub, 
+                class_key=class_key, 
+                data_key=data_key, 
                 routine_key=routine_key, 
                 subject_key=subject_key, 
+                data_type=data_type,    
+                num_vars=num_vars,            
                 pbar=pbar, 
-                data_type=data_type,                
                 logger=logger
             )
         else: 
@@ -84,9 +91,14 @@ def classify_gestures(data,
                 data=data, 
                 num_classes=num_classes, 
                 subject_num=sub, 
-                n_splits=n_splits, 
-                pbar=pbar, 
+                class_key=class_key, 
+                data_key=data_key, 
+                routine_key=routine_key, 
+                subject_key=subject_key, 
                 data_type=data_type,
+                n_splits=n_splits, 
+                num_vars=num_vars,
+                pbar=pbar, 
                 logger=logger
             )
         
@@ -104,14 +116,32 @@ def classify_gestures(data,
                                      save=True, 
                                      save_path=save_path)
         
-def _classify_loro(clf, data, num_classes, 
-                    subject_num, routine_key, 
-                    subject_key, random_state=42, 
-                    pbar=None, data_type='time', logger=None): 
+def _classify_loro(clf, 
+                   data: pd.DataFrame, 
+                   num_classes: int, 
+                   subject_num: int, 
+                   class_key: str, 
+                   data_key: str, 
+                   routine_key: str, 
+                   subject_key: str, 
+                   data_type: str = 'time', 
+                   pbar = None, 
+                   logger = None,
+                   num_vars: int = 16, 
+                   random_state: int = 42, 
+                ): 
     subset_map = { subject_key: subject_num }
     routines = list(set(get_dataframe_subset(data, subset_map)[routine_key]))
     if data_type == 'time':
-        X, y, routs = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+        X, y, routs = adapt_dataset_to_tslearn(
+            data, 
+            num_vars=num_vars,
+            subject_num=subject_num,
+            class_key=class_key,
+            data_key=data_key,
+            routine_key=routine_key, 
+            subject_key=subject_key 
+        )
     else:
         subset_map = {
             subject_key: subject_num,
@@ -151,17 +181,36 @@ def _classify_loro(clf, data, num_classes,
     
     return cm, get_accuracy(cm), clf_benchmark
 
-def _classify_kfcv(clf, data, num_classes, 
-                    subject_num, n_splits=4, 
-                    random_state=42, pbar=None, 
-                    data_type='time', logger=None):
+def _classify_kfcv(clf, 
+                   data: pd.DataFrame, 
+                   num_classes: int, 
+                   subject_num: int, 
+                   class_key: str, 
+                   data_key: str, 
+                   routine_key: str, 
+                   subject_key: str, 
+                   data_type: str = 'time', 
+                   n_splits: int = 4, 
+                   num_vars: int = 16, 
+                   pbar = None, 
+                   logger = None,
+                   random_state: int = 42, 
+                ):
     if data_type == 'time':
         # If we are working with non-feature datasets, we need to adapt our data 
-        X, y, _ = adapt_dataset_to_tslearn(data, subset_val=subject_num)
+        X, y, _ = adapt_dataset_to_tslearn(
+            data, 
+            num_vars=num_vars,
+            subject_num=subject_num,
+            class_key=class_key,
+            data_key=data_key,
+            routine_key=routine_key, 
+            subject_key=subject_key 
+        )
     else:
         # Otherwise for feature datasets, we keep flatenned arrays
         subset_map = {
-            'subject': subject_num,
+            subject_key: subject_num,
         }
         subset = get_dataframe_subset(data, subset_map)
         X, y = np.squeeze(list(subset['mag'])), np.array(subset['gesture'])
