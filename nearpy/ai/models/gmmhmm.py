@@ -1,25 +1,34 @@
 from hmmlearn import hmm
-from sklearn.mixture import GaussianMixture
 import numpy as np
 import os
 import pickle
 
-class GMMHMMVowelClassifier:
-    def __init__(self, n_states=5, n_mix=3, cov_type='diag', n_iter=10):
+from ..utils import log_print
+
+# TODO: Refactor to work with standard structure 
+class GMMHMMClassifer():
+    def __init__(self, 
+                 n_states: int = 5, 
+                 n_mix: int = 3, 
+                 cov_type: str = 'diag', 
+                 n_iter: int = 10,
+                 logger = None
+                ):
         self.n_states = n_states
         self.n_mix = n_mix
         self.cov_type = cov_type
         self.n_iter = n_iter
+        # Stores trained mixture models 
         self.models = {}
         
-    def train(self, features_dict):
+    def train(self, data, labels):
         """
         Train GMM-HMM for each vowel class
         
         Parameters:
         features_dict: Dictionary with vowel labels as keys and list of feature arrays as values
         """
-        for vowel, feature_list in features_dict.items():
+        for idx, datum in enumerate(data): 
             # Initialize model for this vowel
             model = hmm.GMMHMM(n_components=self.n_states, 
                               n_mix=self.n_mix,
@@ -73,3 +82,4 @@ class GMMHMMVowelClassifier:
                 vowel = filename.split("_model.pkl")[0]
                 with open(f"{directory}/{filename}", 'rb') as f:
                     self.models[vowel] = pickle.load(f)
+                    

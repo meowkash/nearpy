@@ -11,7 +11,7 @@ import tsfresh.feature_extraction.feature_calculators as fc
 from .models import TimeAutoEncoder, AEWrapper
 from .datasets import GestureTimeDataset, get_dataloaders
 from .trainer import train_and_evaluate
-from ..features import get_temporal_feats
+from ..features import get_temporal_feats, get_mfcc_feats
 
 ''' Given an input dataframe with specified column(s) for data, generate feature vectors for each column and concat
 '''
@@ -28,7 +28,9 @@ def generate_feature_df(dataframe,
     methods = { 
         'ae': _get_ae_feats,
         'ts': _get_time_series_feats, 
+        'mfcc': _get_mfcc_feats
     }
+    
     assert method in methods.keys(), f'Feature extractor must be one of {methods.keys()}. Got {method} instead'
     assert label_key is not None, f'A valid label key is needed'
     
@@ -115,3 +117,9 @@ def _get_time_series_feats(sig):
     '''
     feat_dict = get_temporal_feats(sig)
     return np.array(list(feat_dict.values()))
+
+def _get_mfcc_feats(sig): 
+    ''' Given a time series, return flattened MFCC feats
+    '''
+    mfcc_arr = get_mfcc_feats(sig)
+    return mfcc_arr.flatten()

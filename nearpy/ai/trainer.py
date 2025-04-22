@@ -77,5 +77,9 @@ def train_and_evaluate(model,
     if config.get('test', False): 
         trainer.test(model, datamodule)
     
-    # Analyze learning rates using Tensorboard
-    return model, trainer
+    # Return everything to visualize stats later 
+    return {
+        'model': model, 
+        'datamodule': datamodule, 
+        'trainer': trainer
+    }

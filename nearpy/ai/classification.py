@@ -275,7 +275,7 @@ def get_classifier_obj(config):
                                      n_estimators=config.get('n_estimators', 10), 
                                      n_jobs=-1, 
                                      random_state=42), 
-        'qda': QuadraticDiscriminantAnalysis()
+        'qda': QuadraticDiscriminantAnalysis(reg_param=0.1)
     }
     
     if classifier in feat_clfs.keys():
@@ -283,8 +283,15 @@ def get_classifier_obj(config):
     elif classifier in dist_clfs.keys():
         clf = dist_clfs[classifier]
     else: 
+        estimator_list = config.get('estimators', None)
+        
+        if estimator_list is None: 
+            estimator_list = list(feat_clfs.items())
+        else: 
+            estimator_list = [(key, feat_clfs[key]) for key in estimator_list if key in feat_clfs.keys()]
+        
         # Ensemble by default
-        clf = VotingClassifier(estimators=list(feat_clfs.items()), 
+        clf = VotingClassifier(estimators=estimator_list, 
                                voting=config.get('voting', 'hard'), 
                                n_jobs=-1)    
     

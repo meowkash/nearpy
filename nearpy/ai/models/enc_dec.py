@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 import lightning as L
 
+# TODO: DEPRECATE
 class EncodeDecode(L.LightningModule): 
     # Model Architecture 
     def __init__(self, optimizer=None, *args, **kwargs):
