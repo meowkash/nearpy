@@ -1,4 +1,4 @@
-import numpy as np 
+import numpy as np
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 import matplotlib.pyplot as plt 
@@ -61,23 +61,23 @@ def get_spectrogram(sig, fs, seg_frac=20, perc_overlap=0.5, visualize=False):
     if visualize: 
         fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
         t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
-        
+
         ax.set_title('Spectrogram')
-        ax.set(xlabel='Time (s)', ylabel='Frequency (Hz)', 
+        ax.set(xlabel='Time (s)', ylabel='Frequency (Hz)',
                 xlim=(t_lo, t_hi))
-        
+
         Sx_dB = 10 * np.log10(np.fmax(specgram, 1e-4))  # limit range to -40 dB
         im = ax.imshow(Sx_dB, origin='lower', aspect='auto',
                         extent=SFT.extent(N), cmap='jet')
         fig.colorbar(im, label='Power Spectral Density (dB)')
-        
+
         # Shade areas where window slices stick out to the side:
         for t0_, t1_ in [(t_lo, SFT.lower_border_end[0] * SFT.T),
                         (SFT.upper_border_begin(N)[0] * SFT.T, t_hi)]:
             ax.axvspan(t0_, t1_, color='w', linewidth=0.1, alpha=.3)
         for t_ in [0, N * SFT.T]:  # mark signal borders with vertical line
             ax.axvline(t_, color='y', linestyle='--', alpha=0.5)
-        
+
         fig.tight_layout()
         plt.show()
         

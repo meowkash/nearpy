@@ -11,6 +11,17 @@ from .quality import get_snr
 def split_timewise(sig, fs, start_time, end_time, num_segs): 
     return np.array_split(sig[start_time*fs:end_time*fs], num_segs)
 
+def get_time_based_segments(signal, seg_len, num_seg: int = None):
+    # Given a signal of some length, divide it into chunks of length seg_len.
+    # This is basically the same as np.split but with some nice-to-haves.
+    if num_seg is None:
+        num_seg = signal // seg_len
+
+    # Since seg_len may be a float, ensure we round it to the nearest integer
+    cropped_signal = np.take(signal, range(int(seg_len*num_seg)), axis=-1)
+
+    return np.split(cropped_signal, num_seg, axis=-1)
+
 def get_adaptive_segment_indices(sig, 
                                  timeAx, 
                                  fs: int, 
