@@ -1,5 +1,6 @@
 from pathlib import Path
 import numpy as np 
+import matplotlib.pyplot as plt 
 
 from .callbacks import VisualizePredictions 
 
@@ -83,3 +84,42 @@ def train_and_evaluate(model,
         'datamodule': datamodule, 
         'trainer': trainer
     }
+    
+
+# Training utility functions
+def plot_training_progress(trainer: L.Trainer, 
+                           model: L.LightningModule) -> None:
+    """
+    Plot the training progress (loss and accuracy).
+    
+    Args:
+        trainer: PyTorch Lightning Trainer
+        model: Trained model
+    """
+    metrics = trainer.callback_metrics
+    
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # Plot loss
+    ax1.plot(model.trainer.logged_metrics.get('train_loss', []), label='Train Loss')
+    ax1.plot(model.trainer.logged_metrics.get('val_loss', []), label='Val Loss')
+    if 'test_loss' in model.trainer.logged_metrics:
+        ax1.plot(model.trainer.logged_metrics.get('test_loss', []), label='Test Loss')
+    ax1.set_xlabel('Step')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Loss Curves')
+    ax1.legend()
+    
+    # Plot accuracy
+    ax2.plot(model.trainer.logged_metrics.get('train_acc', []), label='Train Acc')
+    ax2.plot(model.trainer.logged_metrics.get('val_acc', []), label='Val Acc')
+    if 'test_acc' in model.trainer.logged_metrics:
+        ax2.plot(model.trainer.logged_metrics.get('test_acc', []), label='Test Acc')
+    ax2.set_xlabel('Step')
+    ax2.set_ylabel('Accuracy')
+    ax2.set_title('Accuracy Curves')
+    ax2.legend()
+    
+    plt.tight_layout()
+    plt.show()
