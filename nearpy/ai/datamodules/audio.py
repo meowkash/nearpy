@@ -1,22 +1,236 @@
 import torch
+import pywt
+from pathlib import Path
 import numpy as np
 
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 import lightning as L
 import pandas as pd
 import matplotlib.pyplot as plt
+import torchaudio.transforms as T
 
 import seaborn as sns
 
-class AudioDataModule(L.LightningDataModule):
+def get_scalogram(data, scales, wavelet, normalize: bool = True):
+    data = np.array(data)
+    
+    coeffs, _ = pywt.cwt(data, scales, wavelet)
+    scalogram = np.log1p(np.abs(coeffs))
+    if normalize:
+        scalogram = (scalogram - scalogram.min()) / (scalogram.max() - scalogram.min())
+    
+    return scalogram
+
+def augment_data(data, dataframe, data_key): 
+    # Randomly apply time shifting
+    if np.random.random() > 0.5:
+        shift_amount = int(np.random.random() * len(data) * 0.1)  # Shift up to 10%
+        data = np.roll(data, shift_amount)
+    
+    # Randomly apply additive noise
+    if np.random.random() > 0.5:
+        noise_level = 0.005 + 0.01 * np.random.random()
+        noise = noise_level * np.random.randn(len(data))
+        data = data + noise
+        
+    # Randomly apply amplitude scaling
+    if np.random.random() > 0.5:
+        scale_factor = 0.8 + np.random.random() * 0.4  # 0.8 to 1.2
+        data = data * scale_factor
+        
+    # Make sure audio length stays consistent
+    if len(data) > dataframe[data_key].iloc[0].shape[0]:
+        data = data[:dataframe[data_key].iloc[0].shape[0]]
+    elif len(data) < dataframe[data_key].iloc[0].shape[0]:
+        # Pad with zeros if the audio is too short
+        padding = np.zeros(dataframe[data_key].iloc[0].shape[0] - len(data))
+        data = np.concatenate((data, padding))
+        
+    return data
+    
+class SpectrogramDataset(Dataset): 
+    def __init__(
+        self, 
+        dataframe, 
+        sample_rate: int, 
+        n_fft: int,
+        hop_length: int,
+        num_vars: int, 
+        win_length: int = None, 
+        mel: bool = False,
+        n_mels: int = None,
+        data_key: str = 'Data',
+        label_key: str = 'Class',
+        augment: bool = False
+    ):
+        super().__init__()
+        self.dataframe = dataframe
+        self.num_vars = num_vars
+        self.data_key = data_key
+        self.label_key = label_key
+        self.augment = augment
+        
+        if mel: 
+            # If true, will compute and return mel spectrogram
+            self.transform = T.MelSpectrogram(
+                sample_rate=sample_rate,
+                n_fft=n_fft,
+                hop_length=hop_length,
+                n_mels=n_mels,
+                win_length=win_length,
+                norm="slaney"
+            )
+        else: 
+            self.transform = T.Spectrogram(
+                n_fft=n_fft,
+                hop_length=hop_length,
+                win_length=win_length
+            )  
+        
+    def __len__(self):
+        return len(self.dataframe)
+    
+    def __getitem__(self, index):
+        waveform = self.dataframe.iloc[index][self.data_key] # Shape: (num_vars, num_samples)
+        labels = self.dataframe.iloc[index][self.label_key]
+         
+        waveform = np.squeeze(waveform)
+        # We reshape waveform to ensure output is always 3D
+        if waveform.ndim == 1: 
+            waveform = waveform.reshape((1, -1))
+        
+        if self.augment: 
+            waveform = np.apply_along_axis(augment_data, -1, waveform, self.dataframe, self.data_key)
+            
+        data = self.transform(waveform) # (num_vars, n_fft//2 + 1 (or n_mels), num_frames)
+        
+        return torch.from_numpy(data), torch.from_numpy(labels)
+       
+class ScalogramDataset(Dataset): 
+    def __init__(
+        self, 
+        dataframe,
+        wavelet, 
+        num_vars: int, 
+        num_scales: int = 128, # This is tunable for optimal performance
+        data_key: str = 'Data',
+        label_key: str = 'Class',
+        augment: bool = False
+    ):        
+        super().__init__()
+        
+        # Keep track of dataframe and labeling 
+        self.dataframe = dataframe
+        self.num_vars = num_vars
+        self.data_key = data_key
+        self.label_key = label_key
+        
+        # Store wavelet as transform
+        self.scales = np.arange(1, num_scales)
+        self.wavelet = wavelet 
+        self.augment = augment
+        
+    def __len__(self): 
+        return len(self.dataframe)
+    
+    def __getitem__(self, index):
+        waveform = self.dataframe.iloc[index][self.data_key] # Shape: (num_vars, num_samples)
+        labels = self.dataframe.iloc[index][self.label_key]
+         
+        waveform = np.squeeze(waveform)
+        # We reshape waveform to ensure output is always 3D
+        if waveform.ndim == 1: 
+            waveform = waveform.reshape((1, -1))
+            
+        data = np.apply_along_axis(get_scalogram, 0, waveform, self.scales, self.wavelet, self.normalize)
+        # Shape: (num_scales, num_vars, num_samples)
+        
+        if self.augment: 
+            data = np.apply_along_axis(augment_data, -1, data, self.dataframe, self.data_key)
+            
+        # Rearrange to get each var as its own channel for CNN models    
+        data = torch.permute(data, (1, 0, 2))
+        
+        return torch.from_numpy(data), torch.from_numpy(labels)
+    
+class CepstralDataset(Dataset): 
     """
-    DataModule for audio classification using either Mel spectrograms or CWT scalograms.
+    Dataset for converting audio data from a DataFrame to MFCC/LFCC features
     """
     
     def __init__(
-        self,
+        self, 
         dataframe: pd.DataFrame,
-        dataset_class,  # MelDataset or CWTDataset
+        sample_rate: int = 22050,
+        n_fft: int = 2048,
+        hop_length: int = 512,
+        mel: bool = True,
+        n_coeffs: int = 128,
+        normalize: bool = True,
+        data_key: str = 'Data',
+        label_key: str = 'Class',
+        augment: bool = False
+    ):
+        self.dataframe = dataframe
+        self.data_key = data_key
+        self.label_key = label_key
+        
+        self.normalize = normalize
+        self.augment = augment
+        
+        if mel: 
+            self.transform = T.MFCC(
+                sample_rate=sample_rate,
+                n_mfcc=n_coeffs,
+                melkwargs={
+                    "n_fft": n_fft,
+                    "hop_length": hop_length,
+                    "n_mels": n_coeffs
+                }
+            )
+        else: 
+            self.transform = T.LFCC(
+                sample_rate=sample_rate,
+                n_lfcc=n_coeffs,
+                speckwargs={
+                    "n_fft": n_fft,
+                    "hop_length": hop_length,
+                    "power": 2.0  
+                },
+            )
+            
+    def __len__(self) -> int:
+        return len(self.dataframe)
+    
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
+        waveform = self.dataframe.iloc[index][self.data_key] # Shape: (num_vars, num_samples)
+        labels = self.dataframe.iloc[index][self.label_key]
+         
+        waveform = np.squeeze(waveform)
+        # We reshape waveform to ensure output is always 3D
+        if waveform.ndim == 1: 
+            waveform = waveform.reshape((1, -1))
+            
+        if self.augment: 
+            waveform = np.apply_along_axis(augment_data, -1, waveform, self.dataframe, self.data_key)
+            
+        # Generate cepstral coefficients
+        data = self.transform(waveform) # Shape: (num_scales, num_vars, num_samples)
+        
+        return torch.from_numpy(data), torch.from_numpy(labels)
+    
+
+DATASET_TYPES = {    
+    'spectrogram': SpectrogramDataset,
+    'scalogram': ScalogramDataset,
+    'cepstral': CepstralDataset
+}
+
+class AudioDataModule(L.LightningDataModule):
+    def __init__(
+        self,
+        dataset_dir: Path, 
+        dataset_type: str,  # Spectrogram, Scalogram
         dataset_args: dict[str],
         batch_size: int = 32,
         num_workers: int = 4,
@@ -28,7 +242,7 @@ class AudioDataModule(L.LightningDataModule):
         
         Args:
             dataframe: Pandas DataFrame with 'RF' and 'Class' columns
-            dataset_class: Dataset class to use (MelDataset or CWTDataset)
+            dataset_class: Dataset class to use 
             dataset_args: Arguments to pass to the dataset class
             batch_size: Batch size for training/validation/testing
             num_workers: Number of workers for data loading
@@ -36,11 +250,18 @@ class AudioDataModule(L.LightningDataModule):
             seed: Random seed for reproducibility
         """
         super().__init__()
-        self.dataframe = dataframe
-        self.dataset_class = dataset_class
+        
+        # Ensure data dir is always a pathlib.Path object
+        assert str(dataset_dir).split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
+        
+        self.dataset_dir = dataset_dir
+        self.dataset_class = DATASET_TYPES[dataset_type]
         self.dataset_args = dataset_args
+        self.dataframe = None 
+        
         self.batch_size = batch_size
         self.num_workers = num_workers
+        
         self.train_val_test_split = train_val_test_split
         self.seed = seed
         
@@ -49,6 +270,10 @@ class AudioDataModule(L.LightningDataModule):
         
         # Set up random seed
         L.seed_everything(seed)
+    
+    def prepare_data(self):
+        # Load pickle dataframe and split into train/val/test
+        self.dataframe = pd.read_pickle(self.dataset_dir)
         
     def setup(self, 
               stage: str = None):
@@ -58,18 +283,21 @@ class AudioDataModule(L.LightningDataModule):
         Args:
             stage: Either 'fit', 'validate', 'test', or None
         """
-        # Create the full dataset
-        full_dataset = self.dataset_class(self.dataframe, **self.dataset_args)
+        if self.dataframe is None: 
+            self.prepare_data()
+        
+        # Create the dataset
+        dataset = self.dataset_class(self.dataframe, **self.dataset_args)
         
         # Calculate split sizes
-        dataset_size = len(full_dataset)
+        dataset_size = len(dataset)
         train_size = int(self.train_val_test_split[0] * dataset_size)
         val_size = int(self.train_val_test_split[1] * dataset_size)
         test_size = dataset_size - train_size - val_size
         
         # Split the dataset
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(
-            full_dataset, 
+            dataset, 
             [train_size, val_size, test_size],
             generator=torch.Generator().manual_seed(self.seed)
         )
@@ -112,28 +340,6 @@ class AudioDataModule(L.LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=True
         )
-    
-    def get_class_counts(self) -> dict[str, int]:
-        """
-        Get the class distribution in the full dataset.
-        
-        Returns:
-            Dictionary mapping class names to counts
-        """
-        return self.dataframe['Class'].value_counts().to_dict()
-    
-    def plot_class_distribution(self) -> None:
-        """Plot the class distribution in the dataset."""
-        class_counts = self.dataframe['Class'].value_counts()
-        
-        plt.figure(figsize=(10, 6))
-        sns.barplot(x=class_counts.index, y=class_counts.values)
-        plt.title('Class Distribution')
-        plt.xlabel('Class')
-        plt.ylabel('Count')
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
         
     def visualize_samples(self, num_samples: int = 5) -> None:
         """
@@ -197,48 +403,3 @@ def plot_training_progress(trainer: L.Trainer,
     
     plt.tight_layout()
     plt.show()
-
-
-# Example usage
-"""
-# Create a DataModule
-datamodule = AudioDataModule(
-    dataframe=your_dataframe,
-    dataset_class=MelDataset,  # or CWTDataset
-    dataset_args={
-        'sr': 22050,
-        'n_fft': 2048,
-        'hop_length': 512,
-        'n_mels': 128,
-        'normalize': True
-    },
-    batch_size=32,
-    train_val_test_split=(0.7, 0.15, 0.15)
-)
-
-# Create the model
-model = AudioCNN(
-    input_channels=1,
-    num_classes=len(datamodule.dataframe['Class'].unique()),
-    learning_rate=0.001
-)
-
-# Create a trainer
-trainer = pl.Trainer(
-    max_epochs=50,
-    gpus=1 if torch.cuda.is_available() else 0,
-    callbacks=[
-        pl.callbacks.EarlyStopping(monitor='val_loss', patience=10),
-        pl.callbacks.ModelCheckpoint(monitor='val_loss', save_top_k=1)
-    ]
-)
-
-# Train the model
-trainer.fit(model, datamodule)
-
-# Test the model
-trainer.test(model, datamodule)
-
-# Plot training progress
-plot_training_progress(trainer, model)
-"""

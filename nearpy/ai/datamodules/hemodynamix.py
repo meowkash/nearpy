@@ -39,6 +39,7 @@ class HemodynamixDataModule(L.LightningDataModule):
             test_split: float = 0.1,
             batch_size: int = 64,
             num_workers: int = 4,
+            seed: int = 42
         ):
         
         super().__init__()
@@ -55,6 +56,8 @@ class HemodynamixDataModule(L.LightningDataModule):
         self.input_cols = input_cols
         self.target_col = target_col
 
+        L.seed_everything(seed)
+        
     def prepare_data(self):
         # Load pickle dataframe and split into train/val/test
         self.dataframe = pd.read_pickle(self.data_dir)

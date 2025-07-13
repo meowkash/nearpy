@@ -49,7 +49,7 @@ class VisualizePredictions(Callback):
         if self.data_indices is not None:
             indices = self.data_indices
         else:
-            max_idx = len(dataloader.dataset) - 1
+            max_idx = len(dataset) - 1
             indices = np.random.randint(0, max_idx, size=self.num_samples)
             
         # Using seaborn for plotting

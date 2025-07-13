@@ -27,7 +27,8 @@ def generate_feature_df(dataframe,
                     ):
     methods = { 
         'ae': _get_ae_feats,
-        'ts': _get_time_series_feats, 
+        'ts': _get_time_series_feats,
+        'ts_small': _get_small_time_series_feats, # This is a quick function
         'mfcc': _get_mfcc_feats
     }
     
@@ -116,6 +117,13 @@ def _get_time_series_feats(sig):
     Given a time series signal of shape (NxD), return an array of interpretable features (NxM)
     '''
     feat_dict = get_temporal_feats(sig)
+    return np.array(list(feat_dict.values()))
+
+def _get_small_time_series_feats(sig):
+    '''
+    Given a time series signal of shape (NxD), return an array of interpretable features (NxM)
+    '''
+    feat_dict = get_temporal_feats(sig, exclude=['CWT-Peaks'])
     return np.array(list(feat_dict.values()))
 
 def _get_mfcc_feats(sig): 
