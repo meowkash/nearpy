@@ -249,9 +249,7 @@ class AudioDataModule(L.LightningDataModule):
         super().__init__()
         
         # Ensure data dir is always a pathlib.Path object
-        assert str(dataset_dir).split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
-        
-        self.dataset_dir = dataset_dir
+        self.dataset_dir = Path(dataset_dir)
         self.dataset_class = DATASET_TYPES[dataset_type]
         self.dataset_args = dataset_args
         self.dataframe = None 
@@ -270,7 +268,12 @@ class AudioDataModule(L.LightningDataModule):
     
     def prepare_data(self):
         # Load pickle dataframe and split into train/val/test
-        self.dataframe = pd.read_pickle(self.dataset_dir)
+        if self.dataset_dir.suffix == '.pkl': 
+            self.dataframe = pd.read_pickle(self.dataset_dir)
+        elif self.dataset_dir.suffix == '.csv': 
+            self.dataframe = pd.read_csv(self.dataset_dir)
+        else: 
+            self.dataframe = None
         
     def setup(self, 
               stage: str = None):

@@ -45,7 +45,6 @@ class HemodynamixDataModule(L.LightningDataModule):
         super().__init__()
         
         # Ensure data dir is always a pathlib.Path object
-        assert str(data_dir).split('.')[-1] == 'pkl', 'data_dir must be a .pkl (pickle) file'
         self.data_dir = data_dir
         
         self.batch_size = batch_size
@@ -60,7 +59,12 @@ class HemodynamixDataModule(L.LightningDataModule):
         
     def prepare_data(self):
         # Load pickle dataframe and split into train/val/test
-        self.dataframe = pd.read_pickle(self.data_dir)
+        if self.data_dir.suffix == '.pkl': 
+            self.dataframe = pd.read_pickle(self.data_dir)
+        elif self.data_dir.suffix == '.csv': 
+            self.dataframe = pd.read_csv(self.data_dir)
+        else: 
+            self.dataframe = None
 
     def setup(self, stage=None):
         X = self.dataframe[self.input_cols].to_numpy() 
