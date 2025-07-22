@@ -16,7 +16,7 @@ def get_channels_from_df(tdms_channels):
     clear_name = lambda x: x.split('/')[-1].strip("'>")
     return [clear_name(str(ch)) for ch in list(tdms_channels)]
     
-def split_channels(channel_list, excluded_channels=None, include_biopac=False): 
+def split_channels_by_type(channel_list, excluded_channels=None, include_biopac=False): 
     bio_channels = [x for x in channel_list if x.startswith('BIOPAC')]
     rf_channels = list(set(channel_list) - set(bio_channels))
      

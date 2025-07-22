@@ -1,17 +1,20 @@
 # This will maintain a collection of filters used throughout 
 # Refer: https://tomverbeure.github.io/2020/10/11/Designing-Generic-FIR-Filters-with-pyFDA-and-Numpy.html
+
 # Filters were made using MATLAB and PyFDA
-from sklearn.preprocessing import MinMaxScaler
 from scipy.signal import remez, freqz, filtfilt
+from scipy.integrate import cumulative_trapezoid
+from scipy.ndimage import median_filter
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import matplotlib.pyplot as plt 
 from pathlib import Path
 
-from ..utils.logs import log_print
+from nearpy.utils import log_print
 
 def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
     ''' References: 
-        [1]: https://stackoverflow.com/questions/24460718/how-to-use-pythons-scipy-signal-remez-output-for-scipy-signal-lfilter
+    [1]: https://stackoverflow.com/questions/24460718/how-to-use-pythons-scipy-signal-remez-output-for-scipy-signal-lfilter
     '''
     log_print(logger, 'debug', f'Remez (equi-ripple) band-pass filter with pass band {[0.15, f_s]}')
         
@@ -25,7 +28,12 @@ def get_gesture_filter(f_s=15, fs=100, visualize=False, logger=None,):
     return taps
 
 def load_filter(filename: str):
-    f_path = Path(__file__).parent / 'saved_filters' / f'{filename}.npz'
+    # Check if file location is already a valid path
+    if Path(filename).exists() and filename.endswith('.npz'): 
+        f_path = Path(filename)
+    else:
+        f_path = Path(__file__).parent / 'saved_filters' / f'{filename}.npz'
+    
     fobj = np.load(f_path)
     
     return fobj['ba']
@@ -37,11 +45,21 @@ def filter_and_normalize(sig, filter, axis=0):
     norm = lambda x: np.transpose(scaler.fit_transform(np.transpose(x)))
     
     return norm(np.apply_along_axis(filt, axis, sig))
-    
-# TODO: Jitter Removal - Use median filtering to remove small jitters 
-# TODO: Spike Removal - Use differential integral technique to remove sudden jumps due to ADC - Tweak Thresholding to ensure this does not impact the morphology of acquired signal 
+
+def spike_removal_filter(sig, fs, window_size=10):
+    '''
+    Median filters signal (removes small spikes) as well as first derivative of signal (removes large spikes)
+    '''
+    med_sig = median_filter(sig, size=window_size)
+    diff_sig = np.diff(med_sig, prepend=med_sig[0]) # Compute 1st order derivative while preserving shape
+    med_diff = median_filter(diff_sig)
+    xx = np.linspace(0, len(med_diff)/fs, len(med_diff))
+    med_sig = cumulative_trapezoid(med_diff, xx)
+
+    return med_sig
 
 def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
+    # Helper function to maintain compatibility with prior MATLAB scripts
     if ftype == 'lowpass':
         band = [0, f_p, f_s, 0.5*fs]
         gain = [1, 0]
@@ -69,11 +87,8 @@ def detrend(sig, deg=3, logger=None):
     pfit = np.polynomial.Polynomial.fit(t, sig, deg=deg)
     return sig - pfit(t)
     
-def spike_filter(sig):
-    # Remove small spikes using medfilt1    
-    return sig
-    
 def plot_filter_response(ba, fs=None):
+    # Helper function to provide similar functionality as prior MATLAB scripts
     if fs is not None: 
         w, h = freqz(ba[0], ba[1], fs=fs)
     else: 

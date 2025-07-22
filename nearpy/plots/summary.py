@@ -14,7 +14,8 @@ def pretty_boxplot(data,
                    tick_rotation: tuple[int, int] = (0, 0),
                    f_mult: float = None,
                    title: str = 'Expression Detection Accuracy',
-                   xlabel: str = 'Subject Number'
+                   xlabel: str = 'Subject Number',
+                   ylabel: str = 'Accuracy (%)'
                 ) -> None: 
     if labels is None: 
         labels = [f'{i}' for i in range(1, np.shape(data)[1]+1)]
@@ -86,7 +87,7 @@ def pretty_boxplot(data,
     ax.set_ylim(y_min, min(103, top + 5))
 
     # Set axis labels
-    plt.ylabel('Accuracy (%)', 
+    plt.ylabel(ylabel, 
                fontsize=round(18*f_mult))
     if xlabel is not None:
         plt.xlabel(xlabel, 

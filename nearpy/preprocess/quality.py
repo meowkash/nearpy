@@ -63,7 +63,7 @@ def get_harmonic_ratio(sig, fs, sig_band, harmonic=2, nperseg=256, logarithmic=T
                    logarithmic=logarithmic
                 )
     
-def get_threshold_value(sig, prob_thresh=0.95): 
+def get_adaptive_threshold(sig, prob_thresh=0.95): 
     assert (prob_thresh>=0 & prob_thresh <=1), f'Probability threshold must be between 0 and 1. Got {prob_thresh} instead'
     
     cdf = ecdf(sig).cdf

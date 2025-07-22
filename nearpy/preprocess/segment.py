@@ -7,10 +7,6 @@ from scipy.stats import ecdf
 from .utils import normalize
 from .quality import get_snr
 
-# Not really needed but kept as reference implementation
-def split_timewise(sig, fs, start_time, end_time, num_segs): 
-    return np.array_split(sig[start_time*fs:end_time*fs], num_segs)
-
 def get_time_based_segments(signal, seg_len, num_seg: int = None):
     # Given a signal of some length, divide it into chunks of length seg_len.
     # This is basically the same as np.split but with some nice-to-haves.
@@ -100,11 +96,3 @@ def get_adaptive_segment_indices(sig,
         idx = np.arange(start, end + 1)
         
     return idx, vals, probs
-
-# For a given time series input, get the segment indices 
-def get_segment_indices(sig, window, min_samples, kernel='linear', num_points=4):
-    sig_var = move_std(sig, window)
-    algo = rpt.KernelCPD(kernel=kernel, jump=0.1, min_size=min_samples).fit(sig_var)
-    points = algo.predict(n_bkps=num_points)
-    
-    return points[0], points[-2]
