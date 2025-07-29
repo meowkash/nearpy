@@ -30,7 +30,9 @@ dependencies = [
     "librosa (>=0.11.0,<0.12.0)",
     "torchmetrics (>=1.6.2,<2.0.0)",
     "llvmlite (>=0.44.0,<0.45.0)",
-    "hmmlearn (>=0.3.3,<0.4.0)"
+    "hmmlearn (>=0.3.3,<0.4.0)",
+    "ssqueezepy (>=0.6.5,<0.7.0)",
+    "stonerplots (>=1.7.2,<2.0.0)"
 ]
 
 [build-system]

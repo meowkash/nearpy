@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns 
 
 import numpy as np 
-from tslearn.barycenters import softdtw_barycenter as DBA
+
 from pathlib import Path 
 import pandas as pd 
 
-from ..utils import TxRx
+from nearpy.utils import TxRx
+from nearpy.preprocess import get_segments_template
 
 from lets_plot import *
 
@@ -19,10 +20,11 @@ def plot_routine_template(df, title="", num_channels=16, show_individual=True, d
     for rt in set(df['routine']):
         elems = df.loc[df['routine'] == rt]['mag']
         stacked_elems = np.vstack(elems).reshape(len(elems), num_channels, -1)
+
         if dtw_avg: 
-            channel_averages = DBA(stacked_elems)
+            channel_averages = get_segments_template(stacked_elems, 'dba')
         else:
-            channel_averages = np.mean(stacked_elems, axis=0)
+            channel_averages = get_segments_template(stacked_elems, 'mean')
         
         # Declare figure     
         fig, axes = plt.subplots(4, 4, figsize=(12, 10), sharex=True)
@@ -45,6 +47,7 @@ def plot_routine_template(df, title="", num_channels=16, show_individual=True, d
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.show()
 
+## TODO: DEPRECATE
 def plot_time_series(subject, routine, base_path, fs, start_time, 
                      channels=[0, 5, 10, 15], data_key='filt_mag'):
     # Load data from folder

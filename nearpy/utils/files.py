@@ -5,7 +5,7 @@ from nptdms import TdmsFile
 from scipy.signal import decimate
 
 from .logs import log_print
-from .mimo import TxRx, get_channels_from_df, split_channels
+from .mimo import TxRx, get_channels_from_df, split_channels_by_type
     
 # Loads a TDMS file into a dictionary 
 def read_tdms(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False, 
@@ -42,7 +42,7 @@ def read_tdms(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False,
             alen = min(tmp.shape, alen)
             
         # Compute available channels  
-        bio_channels, rf_channels = split_channels(tdm_channels, exclude, get_bio)
+        bio_channels, rf_channels = split_channels_by_type(tdm_channels, exclude, get_bio)
         log_print(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
         
         # Load data, ensuring all data elements have the same shape

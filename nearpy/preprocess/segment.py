@@ -1,11 +1,34 @@
 import numpy as np 
 from bottleneck import move_std, move_mean
 import ruptures as rpt 
+from tslearn.barycenters import softdtw_barycenter as DBA
 from scipy.interpolate import CubicSpline
 from scipy.stats import ecdf 
 
 from .utils import normalize
 from .quality import get_snr
+
+def get_segments_template(segments, method: str): 
+    '''
+    Assuming a list of segments, return a template. This will work with multivariable signals as well.
+
+    Inputs: 
+        - segments: np.ndarray with shape (num_segs, num_variables, seg_len)
+        - method: str = ['mean', 'dba']
+
+    Output: 
+        - template: np.ndarray with shape (num_variables, seg_len)
+    '''
+    template = None 
+
+    if method == 'mean': 
+        template = np.mean(segments, axis=0)
+    elif method == 'dba': 
+        template = DBA(segments)
+    else: 
+        print(f'Template method {method} not currently implemented.')
+    
+    return template
 
 def get_time_based_segments(signal, seg_len, num_seg: int = None):
     # Given a signal of some length, divide it into chunks of length seg_len.
