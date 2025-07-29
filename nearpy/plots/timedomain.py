@@ -6,8 +6,9 @@ from tslearn.barycenters import softdtw_barycenter as DBA
 from pathlib import Path 
 import pandas as pd 
 
-from ..utils import TxRx
+from nearpy.utils import TxRx
 
+from typing import Tuple
 from lets_plot import *
 
 # Show per-routine averages, both longitudinal and otherwise, to glean insights from data. 
@@ -45,7 +46,24 @@ def plot_routine_template(df, title="", num_channels=16, show_individual=True, d
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.show()
 
-def plot_time_series(subject, routine, base_path, fs, start_time, 
+def plot_time_series(
+        data: np.ndarray, 
+        fs: float, 
+        title: str = "Time Series", 
+        figsize: Tuple[int, int] = (10, 4)
+):
+    t = np.arange(len(data)) / fs
+    
+    fig, ax = plt.subplots(figsize=figsize, dpi=300)
+    ax.plot(t, data, linewidth=0.8, color='#1f77b4')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Amplitude')
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    return fig, ax
+
+def plot_time_series_from_df(subject, routine, base_path, fs, start_time, 
                      channels=[0, 5, 10, 15], data_key='filt_mag'):
     # Load data from folder
     LetsPlot.setup_html()

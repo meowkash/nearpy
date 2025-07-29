@@ -4,8 +4,35 @@ import ruptures as rpt
 from scipy.interpolate import CubicSpline
 from scipy.stats import ecdf 
 
+from typing import Dict
+
 from .utils import normalize
 from .quality import get_snr
+
+from nearpy.utils import log_print
+
+def segment_data(data: Dict, samp_rate: Dict, seg_len: float, num_segs: int, seg_type: str = 'time'): 
+    ''' 
+    General wrapper function which segments all data present in the dictionary into equal sized chunks 
+    (assuming their sampling frequencies are provided as well)  
+
+    Inputs: 
+    - data: Data (with labels expected to be the same as for samp_rate)
+    - samp_rate: Sampling frequencies (for each sensor type)
+    - seg_len: Length of each individual segment (in seconds) 
+    - num_segs: Number of segments
+    '''
+    segments = {}
+
+    for key, datastream in data.items(): 
+        seg_len = int(seg_len * samp_rate[key])
+        if seg_type == 'time':
+            segments[key] = get_time_based_segments(datastream, seg_len, num_segs)
+        else: 
+            log_print(f'Segmentation method "{seg_type}" is not currently supported.')
+            continue
+        
+    return segments
 
 def get_time_based_segments(signal, seg_len, num_seg: int = None):
     # Given a signal of some length, divide it into chunks of length seg_len.
@@ -18,17 +45,19 @@ def get_time_based_segments(signal, seg_len, num_seg: int = None):
 
     return np.split(cropped_signal, num_seg, axis=-1)
 
-def get_adaptive_segment_indices(sig, 
-                                 timeAx, 
-                                 fs: int, 
-                                 method: str, 
-                                 prob_thresh: float = 0.9, 
-                                 sig_band: list = None, 
-                                 noise_band: list = None, 
-                                 win_size: int = 10, 
-                                 logarithmic: bool = False,
-                                 max_gap: int = 10,
-                                 padding: int = 0.05): 
+def get_adaptive_segment_indices(
+        sig, 
+        timeAx, 
+        fs: int, 
+        method: str, 
+        prob_thresh: float = 0.9, 
+        sig_band: list = None, 
+        noise_band: list = None, 
+        win_size: int = 10, 
+        logarithmic: bool = False,
+        max_gap: int = 10,
+        padding: int = 0.05
+): 
     '''
     Depending upon provided input method, return points for segmentation chosen adaptively (CDF > Thresholded value)
     '''

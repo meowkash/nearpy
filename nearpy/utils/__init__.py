@@ -1,6 +1,6 @@
 from .accuracy import get_accuracy, get_class_accuracy
 from .benchmark import fn_timer
-from .files import tdms_to_csv, read_mat, read_tdms
+from .files import tdms_to_csv, read_mat, read_tdms, find_files
 from .logs import get_logger, log_print
 from .mimo import TxRx, get_mimo_channels, get_channels_from_df, split_channels_by_type
 from .transforms import resample_indices
@@ -14,6 +14,7 @@ __all__ = [
     'tdms_to_csv', 
     'read_mat', 
     'read_tdms',
+    'find_files',
     'get_logger', 
     'log_print',
     'TxRx', 
