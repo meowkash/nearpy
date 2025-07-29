@@ -9,6 +9,7 @@ from .filters import (
 )
 from .segment import (
     get_segments_template,
+    segment_data, 
     get_time_based_segments,
     get_adaptive_segment_indices
 )
@@ -40,6 +41,7 @@ __all__ = [
     'detrend', 
     'plot_filter_response',
     'get_segments_template',
+    'segment_data',
     'get_time_based_segments',
     'get_adaptive_segment_indices',
     'reject_outliers', 

@@ -2,14 +2,21 @@ import os
 import pandas as pd
 from pathlib import Path 
 from nptdms import TdmsFile
+from typing import Dict, List
+
 from scipy.signal import decimate
 
 from .logs import log_print
 from .mimo import TxRx, get_channels_from_df, split_channels_by_type
     
 # Loads a TDMS file into a dictionary 
-def read_tdms(f_path, ds_ratio=10, truncate=[0, 1], get_bio=False, 
-                 exclude=None, logger=None, *args, **kwargs):
+def read_tdms(f_path, 
+              ds_ratio=10, 
+              truncate=[0, 1], 
+              get_bio=False, 
+              exclude=None, 
+              logger=None
+):
     '''
     This function loads TDMS files and loads variables into dictionaries which may be easily converted into Dataframes. By default, all channels present in the TDMS file are loaded. 
     
@@ -93,3 +100,23 @@ def tdms_to_csv(fPath):
 def dec_and_trunc(inp, truncate_start, truncate_end, downsample_factor):
     decInp = decimate(inp, downsample_factor)
     return decInp[truncate_start:-truncate_end]
+
+def find_files(base_path: Path, params: Dict, extensions: List[str]) -> Dict:
+    '''
+    Given a bunch of key-value pairs, find files in the base_dir that match the given pattern and extensions. 
+    The number of extensions are left unconstrained to be able to find any files  
+    '''
+    pattern = '' 
+    for k, v in params.items(): 
+        pattern += f'*{k}*{v}'
+    
+    file_paths = {} 
+
+    for extension in extensions:  
+        try:    
+            file_path = next(base_path.glob(f'{pattern}.{extension}'))
+            file_paths[extension] = file_path
+        except StopIteration:
+            continue 
+
+    return file_paths

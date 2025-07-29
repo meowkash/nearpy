@@ -9,6 +9,7 @@ import pandas as pd
 from nearpy.utils import TxRx
 from nearpy.preprocess import get_segments_template
 
+from typing import Tuple
 from lets_plot import *
 
 # Show per-routine averages, both longitudinal and otherwise, to glean insights from data. 
