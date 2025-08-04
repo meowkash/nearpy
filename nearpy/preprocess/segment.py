@@ -7,7 +7,8 @@ from scipy.stats import ecdf
 
 from typing import Dict
 
-from .utils import normalize
+from nearpy.utils import normalize
+from nearpy.io import log_print
 from .quality import get_snr
 
 def get_segments_template(segments, method: str): 
@@ -31,7 +32,7 @@ def get_segments_template(segments, method: str):
         print(f'Template method {method} not currently implemented.')
     
     return template
-from nearpy.utils import log_print
+
 
 def segment_data(data: Dict, samp_rate: Dict, seg_len: float, num_segs: int, seg_type: str = 'time'): 
     ''' 

@@ -4,6 +4,7 @@
 
 ## Directory Structure
 
-**Note:** None of the specialized methods should directly modify dataframes to the best of their limits. All data related operations should be implemented in one place and everything else should only provide supporting scaffolding. 
+**Note:** None of the specialized methods should directly modify dataframes to the best of their limits. All data related operations should be implemented in one place and everything else should only provide supporting scaffolding.
 
 ```features```: Implements feature extraction methods
+```io```: Handles Input/Output functionality

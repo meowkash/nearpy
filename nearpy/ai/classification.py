@@ -19,10 +19,11 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 
-from ..utils import get_accuracy, fn_timer
+from nearpy.utils import get_accuracy, fn_timer
+from nearpy.io import log_print
+from nearpy.plots import plot_pretty_confusion_matrix
+
 from .utils import get_dataframe_subset, adapt_dataset_to_tslearn 
-from ..utils.logs import log_print
-from ..plots import plot_pretty_confusion_matrix
 
 def classify_gestures(data, 
                       save_path: Path, 
