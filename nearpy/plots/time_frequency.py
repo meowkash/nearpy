@@ -7,10 +7,14 @@ from scipy.signal.windows import hamming
 
 from typing import Optional, Tuple
 
-def plot_spectrogram(self, data: np.ndarray, fs: float, 
-                        nperseg: Optional[int] = None, noverlap: Optional[int] = None,
-                        title: str = "Spectrogram", figsize: Tuple[int, int] = (12, 6)):
-    """Plot STFT spectrogram"""
+def plot_spectrogram(self, 
+    data: np.ndarray, 
+    fs: float, 
+    nperseg: Optional[int] = None, 
+    noverlap: Optional[int] = None,
+    export: bool = False, 
+    export_dir: str = ''
+):
     if nperseg is None:
         nperseg = min(256, len(data) // 8)
     if noverlap is None:
@@ -31,23 +35,26 @@ def plot_spectrogram(self, data: np.ndarray, fs: float,
     fig, ax = plt.subplots(figsize=figsize, dpi=300)
     
     Sx_dB = 10 * np.log10(np.fmax(specgram, 1e-10))
-    im = ax.imshow(Sx_dB, origin='lower', aspect='auto',
+    img = ax.imshow(Sx_dB, origin='lower', aspect='auto',
                     extent=SFT.extent(len(data)), cmap=self.cmap)
     
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Frequency (Hz)')
-    ax.set_title(title)
-    ax.set_xlim(t_lo, t_hi)
-    
-    cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Power Spectral Density (dB)')
-    
-    plt.tight_layout()
+    plt.tight_layout()    
+    if export: 
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.savefig(export_dir)
+    else: 
+        fig.colorbar(img, ax=ax, label='Power Spectral Density (dB)')
+        ax.set_xlabel('Time (s)')    
+        ax.set_ylabel('Frequency (Hz)')
+        ax.set_title('Spectrogram')
+        plt.show(block=False)
+
     return fig, ax
 
 def plot_scalogram(data, fs, wavelet='cmor1.5-1.0', 
                    scales=None, use_log_scale = True, 
-                   export=False, export_name: str = ''):
+                   export=False, export_dir: str = ''):
     '''
     Convenience function to plot CWT of provided data. 
     Possible cwt families can be found by using ```pywt.wavelist(kind='continuous')```
@@ -70,7 +77,7 @@ def plot_scalogram(data, fs, wavelet='cmor1.5-1.0',
     if export: 
         ax.set_xticks([])
         ax.set_yticks([])
-        plt.savefig(f'{export_name}_{wavelet}')
+        plt.savefig(export_dir)
     else: 
         fig.colorbar(img, ax=ax, label='Magnitude')
         ax.set_xlabel('Time (s)')    
