@@ -148,8 +148,10 @@ def _classify_loro(clf,
         subset_map = {
             subject_key: subject_num,
         }
-        subset = get_dataframe_subset(data, subset_map)
-        X, y, routs = np.squeeze(list(subset[data_key])), np.array(subset[class_key]), np.array(subset[routine_key])
+        subset_df = get_dataframe_subset(data, subset_map)
+        # Check for NaN
+        subset_df.dropna(inplace=True)
+        X, y, routs = np.squeeze(list(subset_df[data_key])), np.array(subset_df[class_key]), np.array(subset_df[routine_key])
 
     cm = np.zeros((num_classes, num_classes))
     clf_benchmark = {
@@ -214,8 +216,12 @@ def _classify_kfcv(clf,
         subset_map = {
             subject_key: subject_num,
         }
-        subset = get_dataframe_subset(data, subset_map)
-        X, y = np.squeeze(list(subset[data_key])), np.array(subset[class_key])
+        subset_df = get_dataframe_subset(data, subset_map)
+
+        # Check for NaN
+        subset_df.dropna(inplace=True)
+
+        X, y = np.squeeze(list(subset_df[data_key])), np.array(subset_df[class_key])
     
     cm = np.zeros((num_classes, num_classes))
     clf_benchmark = {
