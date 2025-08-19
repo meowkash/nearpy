@@ -6,11 +6,10 @@ from pathlib import Path
 import numpy as np 
 import pandas as pd
 
-from ..utils import read_tdms
-from ..utils.logs import log_print
-from ..preprocess import get_gesture_filter, filter_and_normalize
-
 from .features import generate_feature_df
+
+from nearpy.io import log_print, read_tdms
+from nearpy.preprocess import get_gesture_filter, filter_and_normalize
 
 def make_dataset(data_path: Path, 
                  gestures: dict, 

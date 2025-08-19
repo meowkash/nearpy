@@ -3,14 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import seaborn as sns 
 
-from ..utils import get_accuracy
+from nearpy.utils import get_accuracy
 
 def plot_pretty_confusion_matrix(cmat, 
                                  gestures, 
                                  cmap=sns.light_palette("brown", as_cmap=True), 
                                  sub_id=None, 
                                  save=False, 
-                                 save_path=None):
+                                 save_path=None,
+                                 figsize=(10, 10), 
+                                dpi=300):
     # Store overall confusion matrix over all subjects 
     cc = np.zeros((len(gestures), len(gestures)))
 
@@ -24,7 +26,7 @@ def plot_pretty_confusion_matrix(cmat,
         plot_title = f'Classification Accuracy for Subject {sub_id}'
         if save:
             spath = os.path.join(save_path, f'confusion_matrix_sub_{sub_id}')
-        _plot_pretty_confusion_matrix(cmat, gestures, plot_title, cmap, save, spath)
+        _plot_pretty_confusion_matrix(cmat, gestures, plot_title, cmap, save, spath, figsize, dpi)
     else:        
         # Plot confusion matrices for each subject
         for sub, cm in cmat.items():
@@ -33,26 +35,28 @@ def plot_pretty_confusion_matrix(cmat,
                 plot_title = f'Classification Accuracy for Subject {sub}'
                 if save:
                     spath = os.path.join(save_path, f'confusion_matrix_sub_{sub}')
-                _plot_pretty_confusion_matrix(cm, gestures, plot_title, cmap, save, spath)
+                _plot_pretty_confusion_matrix(cm, gestures, plot_title, cmap, save, spath, figsize, dpi)
         
         # Plot overall confusion matrix
         plot_title = 'Classification Accuracy'
         if save:
             spath = os.path.join(save_path, f'overall_confusion_matrix')
-        _plot_pretty_confusion_matrix(cc, gestures, plot_title, cmap, save, spath)
+        _plot_pretty_confusion_matrix(cc, gestures, plot_title, cmap, save, spath, figsize, dpi)
 
 def _plot_pretty_confusion_matrix(cm, 
                                   gestures, 
                                   plot_title, 
                                   cmap, 
                                   save=False, 
-                                  save_path=None):
+                                  save_path=None,
+                                  figsize=(10, 10), 
+                                  dpi=300):
     acc = get_accuracy(cm)
 
     cm = np.round(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], 2)
     mask = (cm == 0)
     sns.set_style('white')
-    fig, ax = plt.subplots(figsize=(10, 10), dpi=300)
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     
     plt.rcParams.update({
         'font.family': 'sans-serif',

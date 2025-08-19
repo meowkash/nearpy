@@ -1,8 +1,5 @@
 import numpy as np 
 import tsfresh.feature_extraction.feature_calculators as fc
-from mpmath.ctx_mp import get_complex
-from sympy.abc import epsilon
-
 
 def get_feat_fn(feat):
     callbacks = {
@@ -38,7 +35,11 @@ def get_temporal_feats(sig, exclude=[]):
     '''
     Given a time series signal of shape (NxD), return an array of interpretable features (NxM)
     '''
-    FEATS = ['Mobility', 'Complexity', 'Zero-Cross', 'Fourier Entropy', 'Skewness', 'Energy', 'Complexity', 'Kurtosis', 'Median', 'N-Peaks', 'CWT-Peaks', 'Activity']
+    FEATS = ['Mobility', 'Complexity', 'Zero-Cross', 
+            'Fourier Entropy', 'Skewness', 'Energy', 
+            'Complexity', 'Kurtosis', 'Median', 
+            'N-Peaks', 'CWT-Peaks', 'Activity'
+    ]
     result_dict = {}
 
     for feat in FEATS:

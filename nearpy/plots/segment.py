@@ -4,7 +4,8 @@ import seaborn as sns
 from sklearn.metrics import auc
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from ..preprocess import normalize, get_adaptive_segment_indices
+from nearpy.utils import normalize
+from nearpy.preprocess import get_adaptive_segment_indices
 
 # Highlight what segmentation method works 
 def plot_segmentation_results(sig, fs=10000, thr=0.9): 

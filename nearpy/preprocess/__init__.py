@@ -8,15 +8,10 @@ from .filters import (
     plot_filter_response
 )
 from .segment import (
+    get_segments_template,
+    segment_data, 
     get_time_based_segments,
     get_adaptive_segment_indices
-)
-from .utils import (
-    reject_outliers, 
-    align_and_normalize, 
-    normalize,
-    xcorr,
-    get_sig_power
 )
 from .spectrum import (
     ncs_fft,
@@ -38,13 +33,10 @@ __all__ = [
     'ncs_filt',
     'detrend', 
     'plot_filter_response',
+    'get_segments_template',
+    'segment_data',
     'get_time_based_segments',
     'get_adaptive_segment_indices',
-    'reject_outliers', 
-    'align_and_normalize', 
-    'normalize',
-    'xcorr',
-    'get_sig_power',
     'ncs_fft',
     'get_peak_harmonic',
     'get_spectrogram',
