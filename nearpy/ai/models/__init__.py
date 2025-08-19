@@ -13,12 +13,12 @@ MODELS = {
     'grunet': GRUNet
 }
 
-def get_model(name): 
+def get_model(name, *args, **kwargs): 
     if name not in MODELS.keys(): 
         print(f'Model {name} not implemented. Available models: {MODELS.keys()}')
         return None 
     
-    return MODELS[name]
+    return MODELS[name](*args, **kwargs)
 
 __all__ = [
     'get_model',

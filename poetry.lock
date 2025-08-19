@@ -3192,6 +3192,18 @@ develop = ["colorama", "cython (>=3.0.10)", "cython (>=3.0.10,<4)", "flake8", "i
 docs = ["ipykernel", "jupyter-client", "matplotlib", "nbconvert", "nbformat", "numpydoc", "pandas-datareader", "sphinx"]
 
 [[package]]
+name = "stonerplots"
+version = "1.7.2"
+description = "This is a fork of scienceplots and provides a range of matplotlib styles for plotting physics..."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "stonerplots-1.7.2-py3-none-any.whl", hash = "sha256:bd2ce419166da4ce6285c5bf8919259a987821dd7bceaa1eafaa9d8fc82acf61"},
+    {file = "stonerplots-1.7.2.tar.gz", hash = "sha256:e902b3e9b08a4ebf31155343e0073088e23cb38aca0fa28a2bb275214d60e39e"},
+]
+
+[[package]]
 name = "stumpy"
 version = "1.13.0"
 description = "A powerful and scalable library that can be used for a variety of time series data mining tasks"
@@ -3690,4 +3702,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "8dcc047f59b7d6ac06bdc8a9a505993e0f1f8add874654a223da55db7227e107"
+content-hash = "08902cfee9a4235b9352b42afc65733eae518b657ef9de989ed3a64fde106242"
