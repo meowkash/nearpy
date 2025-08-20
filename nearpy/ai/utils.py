@@ -185,17 +185,24 @@ def adapt_dataset_to_tslearn(data: pd.DataFrame,
                              subject_num: int = None,
                              class_key: str = 'gesture', 
                              data_key: str = 'mag', 
-                             routine_key: str = 'routine',
+                             routine_key: str = None,
                              subject_key: str = 'subject', 
                             ):
-    subset_map = {
-        subject_key: subject_num
-    }
-    dft = get_dataframe_subset(data, subset_map)
+    if subject_num is not None:
+        subset_map = {
+            subject_key: subject_num
+        }
+        dft = get_dataframe_subset(data, subset_map)
+    else: 
+        dft = data 
     
     data = np.array([np.transpose(np.reshape(dft.iloc[i][data_key], (num_vars, -1))) for i in range(len(dft))])
     label = dft[class_key].to_numpy()
-    routine = dft[routine_key].to_numpy()
+
+    if routine_key is not None:
+        routine = dft[routine_key].to_numpy()
+    else: 
+        routine = None 
     
     return data, label, routine 
 
