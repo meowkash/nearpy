@@ -98,27 +98,6 @@ def transfer_learning_classification(
     for sub in subjects:
         log_print('debug', f'Leaving out subject: {sub}')
 
-        if data_type == 'time':
-            # If we are working with non-feature datasets, we need to adapt our data 
-            X, y, _ = adapt_dataset_to_tslearn(
-                data, 
-                num_vars=num_vars,
-                class_key=class_key,
-                data_key=data_key,
-                subject_key=subject_key 
-            )
-        else:
-            # Otherwise for feature datasets, we keep flatenned arrays
-            subset_map = {
-                subject_key: sub,
-            }
-            subset_df = get_dataframe_subset(data, subset_map)
-
-            # Check for NaN
-            subset_df.dropna(inplace=True)
-
-            X, y = np.squeeze(list(subset_df[data_key])), np.array(subset_df[class_key])
-        
         # Get dataframe subsets
         target_data = data[data[subject_key] == sub].copy()
         source_data = data[data[subject_key] != sub].copy()
@@ -151,7 +130,9 @@ def transfer_learning_classification(
             if mix_perc > 0:
                 # Reserve portion of target data for testing (never used in training)
                 X_test, X_target_aug, y_test, y_target_aug = train_test_split(
-                    X_target_full, y_target_full, test_size=mix_perc/100, random_state=random_state)
+                    X_target_full, y_target_full, 
+                    test_size=mix_perc/100, 
+                    random_state=random_state)
                     
                 X_train = np.vstack([X_train, X_target_aug])
                 y_train = np.concatenate([y_train, y_target_aug])
@@ -398,7 +379,7 @@ def get_classifier_obj(config):
     grid_params = config.get('params')
     if grid_params is not None: 
         # Ensure we use all processors 
-        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=-1)
+        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=4)
         
     return clf
 
