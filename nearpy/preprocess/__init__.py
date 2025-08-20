@@ -1,3 +1,9 @@
+from .decomposition import (
+    lcd_decomposition,
+    lmd_decomposition,
+    hvd_decomposition, 
+    ewt_decomposition
+)
 from .filters import (
     get_gesture_filter, 
     load_filter, 
