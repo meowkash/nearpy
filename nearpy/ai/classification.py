@@ -72,14 +72,10 @@ def transfer_learning_classification(
     save_path = Path(save_dir) / exp_name
     save_path.mkdir(exist_ok=True, parents=True) # Ensure path exists 
     
+    # Store results 
     res_fname = save_path/ 'results.pkl'
-    
-    if res_fname.exists(): 
-        log_print(logger, 'debug', 'Loading pre-existing results')
-        cmat, acc, bench = pickle.load(open(res_fname, 'rb'))
-    else:
-        log_print(logger, 'debug', 'Creating new confusion matrix')
-        cmat, acc, bench = {}, {}, {}
+    # Store classifier state 
+    clf_fname = save_path/ 'classifier.pkl'
 
     # Set up tqdm 
     classes = list(set(data[class_key]))
@@ -159,7 +155,12 @@ def transfer_learning_classification(
         
         results[sub] = subject_results
     
+    # Save results 
     pickle.dump(results, open(res_fname, 'wb'))
+
+    # Save classifier object (useful for keeping track of hyperparameters for reporting)
+    pickle.dump(clf, open(clf_fname, 'wb'))
+
     pbar.close()
     
     return results
@@ -177,7 +178,10 @@ def multi_class_classification(data: pd.DataFrame, save_path: Path, clf, data_ty
     log_print(logger, 'info', f'Experiment: {exp_name}')
     save_path = Path(save_path) / exp_name
     Path.mkdir(save_path, exist_ok=True, parents=True)
+    # Store results 
     res_fname = save_path/ 'results.pkl'
+    # Store classifier state 
+    clf_fname = save_path/ 'classifier.pkl'
     
     if res_fname.exists(): 
         log_print(logger, 'debug', 'Loading pre-existing results')
@@ -259,6 +263,9 @@ def multi_class_classification(data: pd.DataFrame, save_path: Path, clf, data_ty
     
     # Print overall accuracy 
     log_print(logger, 'info', f'Overall Accuracy for {exp_name} {exp_type}: {get_accuracy(cmat)}')
+
+    # Save classifier object (useful for keeping track of hyperparameters for reporting)
+    pickle.dump(clf, open(clf_fname, 'wb'))
     
     if visualize:
         plot_pretty_confusion_matrix(cmat, classes, save=True, save_path=save_path)
@@ -379,7 +386,7 @@ def get_classifier_obj(config):
     grid_params = config.get('params')
     if grid_params is not None: 
         # Ensure we use all processors 
-        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=4)
+        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=-1)
         
     return clf
 
