@@ -8,7 +8,7 @@ from scipy.signal.windows import hamming
 
 from typing import Optional, Tuple
 
-def plot_spectrogram(self, 
+def plot_spectrogram( 
     data: np.ndarray, 
     fs: float, 
     nperseg: Optional[int] = None, 
@@ -39,13 +39,15 @@ def plot_spectrogram(self,
     
     Sx_dB = 10 * np.log10(np.fmax(specgram, 1e-10))
     img = ax.imshow(Sx_dB, origin='lower', aspect='auto',
-                    extent=SFT.extent(len(data)), cmap=self.cmap)
+            extent=SFT.extent(len(data)), cmap='turbo')
     
     plt.tight_layout()    
     if export: 
         ax.set_xticks([])
         ax.set_yticks([])
-        plt.savefig(export_dir)
+        # Ensure path always exists
+        Path(export_dir).parent.mkdir(exist_ok=True, parents=True)
+        plt.savefig(export_dir, bbox_inches="tight")
     else: 
         fig.colorbar(img, ax=ax, label='Power Spectral Density (dB)')
         ax.set_xlabel('Time (s)')    
@@ -90,13 +92,11 @@ def plot_scalogram(
     plt.tight_layout()
 
     if export: 
-        export_dir = Path(export_path).parent
         ax.set_xticks([])
         ax.set_yticks([])
-
-        if not Path(export_dir).exists(): 
-            Path(export_dir).mkdir(parents=True)
-        plt.savefig(export_path)
+        # Ensure path always exists
+        Path(export_path).parent.mkdir(exist_ok=True, parents=True)
+        plt.savefig(export_path, bbox_inches="tight")
     else: 
         if use_log_scale: 
             fig.colorbar(img, ax=ax, label='Magnitude (dB)')
