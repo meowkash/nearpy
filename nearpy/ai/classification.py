@@ -379,7 +379,7 @@ def get_classifier_obj(config):
     grid_params = config.get('params')
     if grid_params is not None: 
         # Ensure we use all processors 
-        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=4)
+        clf = GridSearchCV(clf, grid_params, refit=True, n_jobs=-1)
         
     return clf
 
