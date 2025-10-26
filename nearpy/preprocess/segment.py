@@ -1,11 +1,12 @@
 import numpy as np 
+import neurokit2 as nk 
+
 from bottleneck import move_std, move_mean
-import ruptures as rpt 
 from tslearn.barycenters import softdtw_barycenter as DBA
 from scipy.interpolate import CubicSpline
 from scipy.stats import ecdf 
 
-from typing import Dict
+from typing import Dict, List
 
 from nearpy.utils import normalize
 from nearpy.io import log_print
@@ -33,6 +34,111 @@ def get_segments_template(segments, method: str):
     
     return template
 
+def segment_multibeat_timeseries(
+    sensor_data: Dict[str, Dict[str, np.ndarray]], 
+    reference_sensor: str,
+    reference_locs: np.ndarray,
+    num_beats: int = 1
+) -> Dict[str, List[Dict[str, np.ndarray]]]:
+    """
+    Segment time series data from multiple sensors into multi-beat segments.
+    
+    Parameters:
+    -----------
+    sensor_data : dict
+        Dictionary with sensor names as keys, each containing:
+        {'time': np.array, 'data': np.array}
+    reference_sensor : str
+        Name of the reference sensor used to define segment locations
+    reference_locs : np.ndarray
+        Array of indices in the reference sensor where beats occur
+    num_beats : int, default=1
+        Number of beats per segment
+    return_time : bool, default=True
+        Whether to return time arrays along with data segments
+    
+    Returns:
+    --------
+    list
+        Dictionary with sensor names as keys, each containing a list of segments.
+    
+    Example:
+    --------
+    >>> # Sample data
+    >>> sensor_data = {
+    ...     'ecg': {'time': np.linspace(0, 10, 1000), 'data': np.sin(2*np.pi*np.linspace(0, 10, 1000))},
+    ...     'ppg': {'time': np.linspace(0, 10, 1200), 'data': np.cos(2*np.pi*np.linspace(0, 10, 1200))}
+    ... }
+    >>> reference_locs = np.array([100, 200, 300, 400, 500])
+    >>> segments = segment_multibeat_timeseries(sensor_data, 'ecg', reference_locs, num_beats=2)
+    """
+    
+    if reference_sensor not in sensor_data:
+        raise ValueError(f"Reference sensor '{reference_sensor}' not found in sensor_data")
+    
+    if len(reference_locs) < num_beats + 1:
+        raise ValueError(f"Need at least {num_beats + 1} reference locations for {num_beats}-beat segments")
+    
+    # Get reference time array
+    ref_time = sensor_data[reference_sensor]['time']
+    
+    # Find aligned locations for all sensors
+    aligned_locs = {}
+    
+    for sensor_name, sensor_info in sensor_data.items():
+        if sensor_name == reference_sensor:
+            # Use original locations for reference sensor
+            aligned_locs[sensor_name] = reference_locs
+        else:
+            # Find closest time points in this sensor
+            sensor_time = sensor_info['time']
+            ref_times_at_locs = ref_time[reference_locs]
+            
+            # For each reference time, find the closest time in current sensor
+            aligned_locs[sensor_name] = np.array([
+                np.argmin(np.abs(sensor_time - ref_t)) 
+                for ref_t in ref_times_at_locs
+            ])
+    
+    # Generate segments for all sensors
+    all_segments = {}
+    
+    for sensor_name, sensor_info in sensor_data.items():
+        sensor_time = sensor_info['time']
+        sensor_data_array = sensor_info['data']
+        locs = aligned_locs[sensor_name]
+        
+        segments = []
+        
+        # Create multi-beat segments
+        for i in range(len(locs) - num_beats):
+            start_idx = locs[i]
+            end_idx = locs[i + num_beats]
+            
+            # Extract segment
+            segment_data = sensor_data_array[start_idx:end_idx]
+            
+            segments.append(segment_data)
+        
+        all_segments[sensor_name] = segments
+    
+    return all_segments
+    
+# Prepares n-beat datasets from raw waveforms, not pre-segmented waveforms
+def get_ecg_segment_locs(t_ecg, ecg, plot: bool = False): 
+    # Get all ECG segmented data 
+    signals, info = nk.ecg_process(ecg, sampling_rate=1/(t_ecg[1]-t_ecg[0]))
+    
+    if plot: 
+        import matplotlib.pyplot as plt 
+        nk.ecg_plot(signals, info)
+        fig = plt.gcf()
+        fig.set_dpi(192)
+        fig.set_size_inches(10, 8, forward=True)
+        
+    r_peak_locs = np.where(signals['ECG_R_Peaks'] == 1) 
+    
+    return np.squeeze(r_peak_locs)
 
 def segment_data(data: Dict, samp_rate: Dict, seg_len: float, num_segs: int, seg_type: str = 'time'): 
     ''' 

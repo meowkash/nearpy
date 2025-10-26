@@ -17,6 +17,7 @@ from .segment import (
     get_segments_template,
     segment_data, 
     get_time_based_segments,
+    get_ecg_segment_locs,
     get_adaptive_segment_indices
 )
 from .spectrum import (
@@ -32,6 +33,10 @@ from .quality import (
 )
 
 __all__ = [
+    'lcd_decomposition',
+    'lmd_decomposition',
+    'hvd_decomposition', 
+    'ewt_decomposition',
     'get_gesture_filter', 
     'load_filter', 
     'filter_and_normalize',
@@ -42,6 +47,7 @@ __all__ = [
     'get_segments_template',
     'segment_data',
     'get_time_based_segments',
+    'get_ecg_segment_locs',
     'get_adaptive_segment_indices',
     'ncs_fft',
     'get_peak_harmonic',

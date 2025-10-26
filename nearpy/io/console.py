@@ -11,11 +11,11 @@ def log_print(logger: logging.Logger,
              level: str = 'info',
              message: str = '', 
              *args, **kwargs) -> None:
-    if logger is not None:
+    if logger:
         log_method = getattr(logger, level, None)
         if log_method:
             log_method(message, *args, **kwargs)
-    else:
+    elif level in ['error', 'warning']:
         print(message)
             
 def get_logger(log_name: str, 
