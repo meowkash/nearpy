@@ -1,6 +1,6 @@
 # Utility functions for dealing with printing to screen 
-import os 
 import sys 
+from contextlib import contextmanager, nullcontext, redirect_stdout
 import contextlib
 import logging 
 import datetime 
@@ -52,13 +52,20 @@ def print_metadata(args, title: str = 'OPERATION'):
     print("=" * 50)
     print()
 
-@contextlib.contextmanager
-def suppress_stdout():
-    """Context manager to suppress stdout"""
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
+@contextmanager
+def suppress_stdout(enable = True):
+    if enable: 
+        import io
+        with redirect_stdout(io.StringIO()):
             yield
-        finally:
-            sys.stdout = old_stdout
+    else: 
+        with nullcontext():
+            yield
+    # OLD: Deprecate 
+    # with open(os.devnull, "w") as devnull:
+    #     old_stdout = sys.stdout
+    #     sys.stdout = devnull
+    #     try:
+    #         yield
+    #     finally:
+    #         sys.stdout = old_stdout
