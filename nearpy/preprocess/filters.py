@@ -63,12 +63,14 @@ def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
     if ftype == 'lowpass':
         band = [0, f_p, f_s, 0.5*fs]
         gain = [1, 0]
-    elif ftype == 'bandass':
+    elif ftype == 'bandpass':
         band = [0, f_p/2 , f_p, f_s, f_s + f_p, 0.5*fs]
         gain = [0, 1, 0]
     elif ftype == 'highpass':
         band = [0, f_p, f_s, 0.5*fs]
         gain = [0, 1]
+    else:
+        return
     
     if n_taps is None: 
         return None 
