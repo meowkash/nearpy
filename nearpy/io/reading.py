@@ -40,13 +40,14 @@ def read_tdms(f_path,
         # Compute dimensions of input 
         tmp = dec_and_trunc(tdmg[tdm_channels[0]][:], truncate[0], truncate[1], ds_ratio)
         alen = len(tmp)
-        if get_bio: 
-            tmp = tdmg[bio_channels[0]]
-            alen = min(tmp.shape, alen)
             
         # Compute available channels  
         bio_channels, rf_channels = split_channels_by_type(tdm_channels, exclude, get_bio)
         log_print(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
+        
+        if get_bio: 
+            tmp = tdmg[bio_channels[0]]
+            alen = min(len(tmp), alen)
         
         # Load data, ensuring all data elements have the same shape
         rf, bio = {}, {} 

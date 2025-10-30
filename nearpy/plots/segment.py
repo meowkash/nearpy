@@ -4,8 +4,58 @@ import seaborn as sns
 from sklearn.metrics import auc
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
+from typing import List, Dict, Tuple 
+
 from nearpy.utils import normalize
 from nearpy.preprocess import get_adaptive_segment_indices
+
+def plot_segments(segments: Dict[str, List[Dict[str, np.ndarray]]], 
+                 max_segments: int = 5, 
+                 figsize: Tuple[int, int] = (15, 10)):
+    """
+    Plot segments with templates 
+    
+    Parameters:
+    -----------
+    segments : dict
+        Output from segment_multibeat_timeseries
+    max_segments : int
+        Maximum number of segments to plot per sensor
+    figsize : tuple
+        Figure size for matplotlib
+    """
+    
+    num_sensors = len(segments)
+    fig, axes = plt.subplots(num_sensors, 1, figsize=figsize)
+    
+    if num_sensors == 1:
+        axes = [axes]
+    
+    colors = plt.cm.tab10(np.linspace(0, 1, max_segments))
+    
+    for idx, (sensor_name, sensor_segments) in enumerate(segments.items()):
+        ax = axes[idx]
+        
+        num_to_plot = min(len(sensor_segments), max_segments)
+        
+        for seg_idx in range(num_to_plot):
+            segment = sensor_segments[seg_idx]
+            
+            x = np.arange(len(segment))
+            
+            ax.plot(x, segment, 
+                   color=colors[seg_idx], 
+                   label=f'Segment {seg_idx + 1}',
+                   alpha=0.8)
+        
+        ax.set_title(f'{sensor_name.upper()} - Multi-beat Segments')
+        ax.set_xlabel('Time (normalized)')
+        ax.set_ylabel('Amplitude')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    fig.show()
 
 # Highlight what segmentation method works 
 def plot_segmentation_results(sig, fs=10000, thr=0.9): 

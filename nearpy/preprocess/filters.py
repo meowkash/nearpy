@@ -118,5 +118,6 @@ def plot_filter_response(ba, fs=None):
     ax[1].set_ylabel('Phase (rad)', fontsize=12)
     ax[1].legend()
     
+    ax[1].sharex(ax[0])
     fig.tight_layout() 
     plt.show() 
