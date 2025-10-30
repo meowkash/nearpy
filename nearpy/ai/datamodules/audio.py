@@ -1,3 +1,8 @@
+'''
+A generalized DataModule implementation suitable for audio centered tasks, 
+providing time-frequency based transforms and datasets. 
+'''
+
 import torch
 import pywt
 from pathlib import Path

@@ -1,3 +1,9 @@
+'''
+General data-module implementation which provides multivariate time series as inputs 
+and a single time series as output. While this may not work for all cases, this can
+be a good starting point for custom DataModules
+'''
+
 import pandas as pd
 from pathlib import Path 
 from torch.utils.data import DataLoader, Dataset
@@ -5,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import lightning as L
 import numpy as np 
 
-class HemodynamixDataset(Dataset):
+class TimeSeriesDataset(Dataset):
     def __init__(self, X, y, transform=None):
         self.inputs = X
         self.target = y
@@ -23,13 +29,13 @@ class HemodynamixDataset(Dataset):
             
         if self.transform is not None:
             elem = self.transform(elem)
-            # tsai transforms to use: TSVerticalFlip, TSRandomShift, TSHorizontalFlip, TSRandomTrends, TSWarp
+            # Available transforms may be found in nearpy.ai.augmentations
 
         target = self.target[idx]
         
         return elem, target
 
-class HemodynamixDataModule(L.LightningDataModule):
+class TimeSeriesDataModule(L.LightningDataModule):
     def __init__(
             self, 
             data_dir: Path, 
@@ -66,7 +72,7 @@ class HemodynamixDataModule(L.LightningDataModule):
         else: 
             self.dataframe = None
 
-    def setup(self, stage=None):
+    def setup(self):
         X = self.dataframe[self.input_cols].to_numpy() 
         y = self.dataframe[self.target_col].to_numpy()
         
@@ -74,13 +80,11 @@ class HemodynamixDataModule(L.LightningDataModule):
         X_train, X_val, y_train, y_val = train_test_split(X_tv, y_tv, test_size=self.val_split)
 
         # Assign train/val datasets for use in dataloaders
-        if stage == "fit" or stage is None:
-            self.train_dataset = HemodynamixDataset(X_train, y_train)
-            self.val_dataset = HemodynamixDataset(X_val, y_val)
+        self.train_dataset = TimeSeriesDataset(X_train, y_train)
+        self.val_dataset = TimeSeriesDataset(X_val, y_val)
 
         # Assign test dataset for use in dataloader(s)
-        if stage == "test" or stage is None:
-            self.test_dataset = HemodynamixDataset(X_test, y_test)
+        self.test_dataset = TimeSeriesDataset(X_test, y_test)
 
     def train_dataloader(self):
         return DataLoader(
