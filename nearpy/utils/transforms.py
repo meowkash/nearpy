@@ -1,5 +1,6 @@
+import torch 
 import numpy as np 
-import numpy as np 
+
 from scipy import signal 
 from sklearn.preprocessing import minmax_scale 
 
@@ -16,8 +17,15 @@ def align_and_normalize(sig, ref):
     else:
         return minmax_scale(sig)
 
-def normalize(x): 
-    return (x-np.min(x))/(np.max(x)-np.min(x))  
+def normalize(x: np.ndarray) -> np.ndarray:
+    x_min = np.min(x, axis=-1, keepdims=True)
+    x_max = np.max(x, axis=-1, keepdims=True)
+    return (x - x_min) / (x_max - x_min + 1e-8)
+
+def normalize_torch(x: torch.Tensor) -> torch.Tensor:
+    x_min = x.amin(dim=-1, keepdim=True)
+    x_max = x.amax(dim=-1, keepdim=True)
+    return (x - x_min) / (x_max - x_min + 1e-8)
 
 def xcorr(x,y):
     """

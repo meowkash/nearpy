@@ -6,12 +6,10 @@ authors = [
     { name = "Aakash Kapoor", email = "ak2247@cornell.edu" }
 ]
 readme = "README.md"
-license = { text = "GPL-3.0-or-later" } 
+license = { text = "GPL-3.0-or-later" }
 requires-python = ">=3.11,<4"
+
 dependencies = [
-    "torch (>=2.6.0,<3.0.0)",
-    "torchvision (>=0.21.0,<0.22.0)",
-    "torchaudio (>=2.6.0,<3.0.0)",
     "scikit-learn (>=1.6.1,<2.0.0)",
     "pywavelets (>=1.8.0,<2.0.0)",
     "nptdms (>=1.10.0,<2.0.0)",
@@ -40,3 +38,13 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4"
+torch = { version = "*", source = "pytorch-cu130" }
+torchvision = { version = "*", source = "pytorch-cu130" }

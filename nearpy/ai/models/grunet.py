@@ -128,7 +128,7 @@ class GRUNet(L.LightningModule):
         Returns:
             Predicted output of shape [batch_size, output_seq_len]
         """
-        batch_size = x.size(0)
+        batch_size = x.shape[0]
         
         # Extract features with convolutional layers
         # This handles arbitrary sequence lengths
@@ -277,7 +277,7 @@ class GRUNet(L.LightningModule):
         )
         
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.5, patience=5, verbose=True
+            optimizer, mode='min', factor=0.5, patience=5
         )
         
         return {

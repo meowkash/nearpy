@@ -12,7 +12,7 @@ def train_and_evaluate(
         config: dict, 
         datamodule: L.LightningDataModule,
         save_checkpoints: bool = True, 
-        plot_interval: int = 5, 
+        plot_interval: int = None, 
         plot_indices: list[int] = None,
         num_samples: int = 5,
         enable_early_stopping: bool = False
@@ -41,7 +41,7 @@ def train_and_evaluate(
         )
         callbacks.append(checkpoint_callback)
 
-    if plot_interval is not None: 
+    if isinstance(plot_interval, int) and plot_interval > 0: 
         if plot_indices is None: 
             max_idx = len(datamodule.test_dataset) - 1 
             plot_indices = np.random.randint(0, max_idx, size=num_samples)
