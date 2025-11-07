@@ -215,10 +215,12 @@ class GRUNet(L.LightningModule):
         y = y.float()
         y_hat = self(x)
         
+        # Smoothness regularization term
+        smoothness_loss = torch.mean((y_hat[:, 1:] - y_hat[:, :-1]) ** 2)
+
         # Calculate loss
-        # loss = F.mse_loss(y_hat, y)
-        loss = self.loss_fn(y_hat, y)
-        
+        loss = self.loss_fn(y_hat, y) + 0.1 * smoothness_loss
+
         # Log metrics
         self.train_mse(y_hat, y)
         self.train_mae(y_hat, y)

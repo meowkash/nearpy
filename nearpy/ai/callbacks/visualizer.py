@@ -11,6 +11,8 @@ class VisualizePredictions(Callback):
     """
     def __init__(
         self,
+        visualize_path = None, 
+        exp_name: str = '', 
         plot_interval: int = 5,
         num_samples: int = 4,
         figsize: tuple[int, int] = (6, 8),
@@ -30,6 +32,8 @@ class VisualizePredictions(Callback):
         self.num_samples = num_samples
         self.figsize = figsize
         self.data_indices = data_indices
+        self.visualize_path = visualize_path
+        self.exp_name = exp_name
         
     def on_validation_epoch_end(self, trainer, module):
         """ Run visualization at the end of testing epoch. This ensures we have test loss to display
@@ -113,4 +117,9 @@ class VisualizePredictions(Callback):
         fig.suptitle(f'Epoch {epoch}. Val Loss: {test_loss}')            
         fig.supxlabel('Interpolated Time Axis')
         plt.tight_layout()
-        plt.show()
+        
+        if self.visualize_path:
+            plt.savefig(self.visualize_path / f'{self.exp_name}_Epoch_{epoch}.png')
+        
+        # Close plots to keep a check on memory
+        plt.close()

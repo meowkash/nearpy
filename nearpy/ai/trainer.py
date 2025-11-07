@@ -12,7 +12,7 @@ def train_and_evaluate(
         config: dict, 
         datamodule: L.LightningDataModule,
         save_checkpoints: bool = True, 
-        plot_interval: int = None, 
+        plot_interval: int = 5, 
         plot_indices: list[int] = None,
         num_samples: int = 5,
         enable_early_stopping: bool = False
@@ -34,7 +34,8 @@ def train_and_evaluate(
     callbacks = [lr_monitor_callback]
 
     if save_checkpoints: 
-        ckpt_path = base_path / 'ckpts'
+        ckpt_path = Path(base_path) / 'ckpts'
+        ckpt_path.mkdir(exist_ok=True, parents=True)
         checkpoint_callback = ModelCheckpoint(
             dirpath=ckpt_path, filename=exp_name, save_top_k=1, verbose=False, 
             monitor='val_loss', mode='min', enable_version_counter=True
@@ -46,7 +47,12 @@ def train_and_evaluate(
             max_idx = len(datamodule.test_dataset) - 1 
             plot_indices = np.random.randint(0, max_idx, size=num_samples)
 
+        visualize_path = Path(base_path) / 'visualizations'
+        visualize_path.mkdir(exist_ok=True, parents=True)
+
         plot_callback = VisualizePredictions(
+            visualize_path=visualize_path,
+            exp_name=exp_name, 
             plot_interval=plot_interval,
             data_indices=plot_indices,
             num_samples=num_samples
