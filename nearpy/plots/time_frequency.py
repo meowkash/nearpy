@@ -68,7 +68,7 @@ def plot_scalogram(
     fig = None, 
     ax = None, 
     figsize = (4, 4),
-    dpi = 300, 
+    dpi = 150, 
 ):
     '''
     Convenience function to plot CWT of provided data. 
@@ -89,7 +89,7 @@ def plot_scalogram(
         coeffs = np.abs(coeffs)    
     
     img = ax.imshow(coeffs, aspect='auto', cmap='turbo', extent=[0, t[-1], freqs[-1], freqs[0]])
-    plt.tight_layout()
+    # plt.tight_layout()
 
     if export: 
         ax.set_xticks([])

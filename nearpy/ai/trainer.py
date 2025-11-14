@@ -34,7 +34,7 @@ def train_and_evaluate(
     callbacks = [lr_monitor_callback]
 
     if save_checkpoints: 
-        ckpt_path = Path(base_path) / 'ckpts'
+        ckpt_path = Path(base_path) / 'Checkpoints'
         ckpt_path.mkdir(exist_ok=True, parents=True)
         checkpoint_callback = ModelCheckpoint(
             dirpath=ckpt_path, filename=exp_name, save_top_k=1, verbose=False, 
@@ -47,7 +47,7 @@ def train_and_evaluate(
             max_idx = len(datamodule.test_dataset) - 1 
             plot_indices = np.random.randint(0, max_idx, size=num_samples)
 
-        visualize_path = Path(base_path) / 'visualizations'
+        visualize_path = Path(base_path) / 'Visualization'
         visualize_path.mkdir(exist_ok=True, parents=True)
 
         plot_callback = VisualizePredictions(

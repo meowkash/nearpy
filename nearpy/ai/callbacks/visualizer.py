@@ -103,23 +103,37 @@ class VisualizePredictions(Callback):
             sns.lineplot(y_pred[i], ax=axes[i, 2], 
                          linewidth=3, 
                          color=colors[(3*i+2)%num_colors])
-
-        # Display title for top graph 
-        axes[i, 0].set_title('Input')
-        axes[i, 1].set_title('Target')
-        axes[i, 2].set_title('Prediction')
     
-        if i!=len(indices): 
-            axes[i, 0].set_xticklabels([])
-            axes[i, 1].set_xticklabels([])
-            axes[i, 2].set_xticklabels([])
+            if i!=len(indices): 
+                axes[i][0].set_xticklabels([])
+                axes[i][0].set_xlabel('')
+                axes[i][1].set_xticklabels([])
+                axes[i][1].set_xlabel('')
+                axes[i][2].set_xticklabels([])
+                axes[i][2].set_xlabel('')
+            else: 
+                axes[i][0].set_xlabel('Normalized Time Axis', fontsize=12)
+                axes[i][1].set_xlabel('Normalized Time Axis', fontsize=12)
+                axes[i][2].set_xlabel('Normalized Time Axis', fontsize=12)
+        
+        # Display title for top graph 
+        axes[0][0].set_title('Input')
+        axes[0][1].set_title('Target')
+        axes[0][2].set_title('Prediction')
+
+        if i != 4: 
+                axes[i][0].set_xticklabels([])
+                axes[i][0].set_xlabel('')
+                axes[i][1].set_xticklabels([])
+                axes[i][1].set_xlabel('')
+            
 
         fig.suptitle(f'Epoch {epoch}. Val Loss: {test_loss}')            
         fig.supxlabel('Interpolated Time Axis')
         plt.tight_layout()
         
         if self.visualize_path:
-            plt.savefig(self.visualize_path / f'{self.exp_name}_Epoch_{epoch}.png')
+            plt.savefig(self.visualize_path / f'Validation Example_{self.exp_name}_Epoch {epoch}.png')
         
         # Close plots to keep a check on memory
         plt.close()
