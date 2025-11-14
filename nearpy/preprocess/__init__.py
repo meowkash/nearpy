@@ -20,6 +20,14 @@ from .segment import (
     get_ecg_segment_locs,
     get_adaptive_segment_indices
 )
+from .smoothing import (
+    robust_lowess,
+    robust_loess,
+    moving_mean,
+    moving_median,
+    gaussian_filter,
+    savitzky_golay_filter
+)
 from .spectrum import (
     ncs_fft,
     get_peak_harmonic,
@@ -49,6 +57,12 @@ __all__ = [
     'get_time_based_segments',
     'get_ecg_segment_locs',
     'get_adaptive_segment_indices',
+    'robust_lowess',
+    'robust_loess',
+    'moving_mean',
+    'moving_median',
+    'gaussian_filter',
+    'savitzky_golay_filter',
     'ncs_fft',
     'get_peak_harmonic',
     'get_spectrogram',
