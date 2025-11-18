@@ -62,7 +62,7 @@ def plot_scalogram(
     fs, 
     wavelet='cmor1.5-1.0', 
     scales=None, 
-    use_log_scale = True, 
+    use_log_scale = False, 
     export=False, 
     export_path: str = '',
     fig = None, 
