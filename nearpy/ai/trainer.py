@@ -52,7 +52,7 @@ def train_and_evaluate(
             max_idx = len(datamodule.test_dataset) - 1 
             plot_indices = np.random.randint(0, max_idx, size=num_samples)
 
-        visualize_path = base_path / 'Visualization'
+        visualize_path = base_path / 'Visualizations'
         visualize_path.mkdir(exist_ok=True, parents=True)
 
         plot_callback = VisualizePredictions(
@@ -68,8 +68,8 @@ def train_and_evaluate(
         early_callback = EarlyStopping(monitor='val_loss') 
         callbacks.append(early_callback)
     
-    csv_logger = CSVLogger(save_dir=base_path / 'logs', name=exp_name, version='csv_logs')
-    tb_logger  = TensorBoardLogger(save_dir=base_path/ 'logs', name=exp_name, version='tb_logs')
+    csv_logger = CSVLogger(save_dir=base_path / 'Logs', name=exp_name, version='csv_logs')
+    tb_logger  = TensorBoardLogger(save_dir=base_path/ 'Logs', name=exp_name, version='tb_logs')
     
     # Define trainer 
     trainer = L.Trainer(

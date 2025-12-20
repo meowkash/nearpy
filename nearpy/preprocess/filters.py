@@ -103,15 +103,15 @@ def plot_filter_response(ba, fs=None):
     fig, ax = plt.subplots(2, 1, figsize=(5, 5), dpi=300)
     # Magnitude response 
     ax[0].plot(w, h_mag, 
-               linewidth=3,
+               linewidth=1.5,
                color='#3171ad', 
                label='Magnitude Response')
-    ax[0].set_xticks([])
+    # ax[0].set_xticks([])
     ax[0].set_ylabel('Gain (dB)', fontsize=12)
     ax[0].legend()
     # Phase response
     ax[1].plot(w, h_phase, 
-               linewidth=3,
+               linewidth=1.5,
                color='#cc7e4e',
                label='Phase Response')
     ax[1].set_xlabel('Frequency', fontsize=12)
@@ -119,5 +119,6 @@ def plot_filter_response(ba, fs=None):
     ax[1].legend()
     
     ax[1].sharex(ax[0])
+
     fig.tight_layout() 
     plt.show() 

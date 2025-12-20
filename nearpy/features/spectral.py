@@ -13,39 +13,33 @@ def get_cwt_feats(df, f_low=0.1, f_high=15, fs=100, num_levels=30, wavelet='cgau
     
     return df.apply(cwt_extractor)
 
-def get_mfcc_feats(audio, 
-                   sample_rate: int = 22050, 
-                   n_mfcc: int = 13, 
-                   n_fft: int = 2048, 
-                   hop_length: int = 512, 
-                   fmin: float = 0, 
-                   fmax: float = None,
-                   diffs: bool = False 
-                ):
+def get_mfcc_feats(
+    audio, 
+    sample_rate: int = 22050, 
+    n_mfcc: int = 13, 
+    n_fft: int = 2048, 
+    hop_length: int = 512, 
+    fmin: float = 0, 
+    fmax: float = None,
+    diffs: bool = True,
+    normalize: bool = True
+):
     '''
-    Extract MFCC features from an audio waveform.
+    Helper function to extract MFCC features for an input utterance
     
-    Parameters:
+    Inputs:
     -----------
-    audio_data : numpy.ndarray
-        The audio waveform (already silence-removed)
-    sample_rate : int
-        Sampling rate of the audio
-    n_mfcc : int
-        Number of MFCC coefficients to extract
-    n_fft : int
-        Length of the FFT window
-    hop_length : int
-        Number of samples between successive frames
-    fmin : int
-        Minimum frequency for mel filterbank
-    fmax : int or None
-        Maximum frequency for mel filterbank (None uses sample_rate/2)
+    audio_data : numpy.ndarray -> Input utterance
+    sample_rate : int -> Sampling rate of the audio
+    n_mfcc : int -> Number of MFCC coefficients per frame
+    n_fft : int -> Number of samples per FFT window
+    hop_length : int -> Number of samples between successive frames
+    fmin : int -> Minimum frequency for mel filterbank
+    fmax : int or None -> Maximum frequency for mel filterbank
         
-    Returns:
+    Output:
     --------
-    mfccs : numpy.ndarray
-        MFCC features with shape (n_mfcc, n_frames)
+    mfccs : numpy.ndarray -> MFCC features with shape (n_mfcc, n_frames)
     '''
     audio = np.array(audio, dtype=float)
     
@@ -67,4 +61,9 @@ def get_mfcc_feats(audio,
         delta2_mfccs = librosa.feature.delta(mfcc_feats, order=2)
         mfcc_feats = np.vstack([mfcc_feats, delta_mfccs, delta2_mfccs])
         
+    # Normalize (Cepstral Mean Variance Normalization - CMVN)
+    if normalize: 
+        scaler = StandardScaler()
+        mfcc_feats = scaler.fit_transform(mfcc_feats)
+
     return mfcc_feats

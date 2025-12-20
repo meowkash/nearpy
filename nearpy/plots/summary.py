@@ -5,20 +5,28 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 
 # Given a 2D array of shape (n_classes, n_vars), make pretty boxplots
-def pretty_boxplot(data, 
-                   labels: list[str] = None,
-                   figsize: tuple[float, float] = (9, 6),
-                   box_width: float = 0.8,
-                   color_map: str = 'deep',
-                   y_min: int = 47,
-                   tick_rotation: tuple[int, int] = (0, 0),
-                   f_mult: float = None,
-                   title: str = 'Expression Detection Accuracy',
-                   xlabel: str = 'Subject Number',
-                   ylabel: str = 'Accuracy (%)'
-                ) -> None: 
-    if labels is None: 
-        labels = [f'{i}' for i in range(1, np.shape(data)[1]+1)]
+def pretty_boxplot(
+    data, 
+    labels: list[str] = None,
+    figsize: tuple[float, float] = (9, 6),
+    box_width: float = 0.8,
+    color_map: str = 'deep',
+    y_min: int = 47,
+    tick_rotation: tuple[int, int] = (0, 0),
+    f_mult: float = None,
+    title: str = 'Expression Detection Accuracy',
+    xlabel: str = 'Subject Number',
+    ylabel: str = 'Accuracy (%)'
+) -> None: 
+    
+    if not labels: 
+        if isinstance(data, [list, tuple]): 
+            labels = [f'{i}' for i in range(1, np.shape(data)[1]+1)]
+        elif isinstance(data, dict): 
+            labels = data.keys() 
+        else:
+            print('Unsupported data type')
+            return 
     
     # Create dataframe to ease seaborn plotting          
     df = pd.DataFrame(data, columns=labels)
