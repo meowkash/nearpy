@@ -7,7 +7,7 @@ authors = [
 ]
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
-requires-python = ">=3.11,<4"
+requires-python = ">=3.11,<3.14"
 
 dependencies = [
     "scikit-learn (>=1.6.1,<2.0.0)",
@@ -26,13 +26,13 @@ dependencies = [
     "lightning (>=2.5.0.post0,<3.0.0)",
     "librosa (>=0.11.0,<0.12.0)",
     "torchmetrics (>=1.6.2,<2.0.0)",
-    "llvmlite (>=0.44.0,<0.45.0)",
     "hmmlearn (>=0.3.3,<0.4.0)",
     "ssqueezepy (>=0.6.5,<0.7.0)",
     "stonerplots (>=1.7.2,<2.0.0)",
     "emd-signal (>=1.6.4,<2.0.0)",
     "vmdpy (>=0.2,<0.3)",
-    "neurokit2 (>=0.2.12,<0.3.0)"
+    "neurokit2 (>=0.2.12,<0.3.0)",
+    "torchaudio (>=2.9.1,<3.0.0)"
 ]
 
 [build-system]
@@ -45,6 +45,6 @@ url = "https://download.pytorch.org/whl/cu130"
 priority = "explicit"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<4"
+python = ">=3.11,<3.14"
 torch = { version = "*", source = "pytorch-cu130" }
 torchvision = { version = "*", source = "pytorch-cu130" }

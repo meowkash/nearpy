@@ -2,13 +2,13 @@
 A collection of smoothing functions to provide a similar interface as MATLAB's
 Data Cleaner Toolbox. Defaults have been adapted from their MATLAB counterparts. 
 """
-
+import numba 
 import numpy as np
 from scipy.signal import savgol_filter
 from scipy.ndimage import convolve1d
 from scipy.linalg import lstsq
 
-
+@numba.njit
 def robust_lowess(signal, window_length, frac=None, it=3):
     """
     Robust LOWESS (Locally Weighted Scatterplot Smoothing) filter.
@@ -101,7 +101,7 @@ def robust_lowess(signal, window_length, frac=None, it=3):
     
     return smoothed
 
-
+@numba.njit
 def robust_loess(signal, window_length, poly_degree=1, frac=None, it=3):
     """
     Robust LOESS (Locally Estimated Scatterplot Smoothing) filter.
