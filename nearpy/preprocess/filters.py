@@ -46,16 +46,16 @@ def filter_and_normalize(sig, filter, axis=0):
     
     return norm(np.apply_along_axis(filt, axis, sig))
 
-def spike_removal_filter(sig, fs, window_size=10):
+def spike_removal_filter(sig, fs, window_size=11):
     '''
     Median filters signal (removes small spikes) as well as first derivative of signal (removes large spikes)
     '''
-    med_sig = median_filter(sig, size=window_size)
-    diff_sig = np.diff(med_sig, prepend=med_sig[0]) # Compute 1st order derivative while preserving shape
-    med_diff = median_filter(diff_sig)
+    # med_sig = median_filter(sig, size=window_size)
+    diff_sig = np.diff(sig, prepend=sig[0]) # Compute 1st order derivative while preserving shape
+    med_diff = median_filter(diff_sig, size=window_size)
     xx = np.linspace(0, len(med_diff)/fs, len(med_diff))
     med_sig = cumulative_trapezoid(med_diff, xx)
-
+    
     return med_sig
 
 def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
@@ -67,7 +67,7 @@ def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
         band = [0, f_p/2 , f_p, f_s, f_s + f_p, 0.5*fs]
         gain = [0, 1, 0]
     elif ftype == 'highpass':
-        band = [0, f_p, f_s, 0.5*fs]
+        band = [0, f_s, f_p, 0.5*fs]
         gain = [0, 1]
     else:
         return

@@ -12,7 +12,7 @@ from nearpy.utils import normalize
 from nearpy.io import log_print
 from .quality import get_snr
 
-def get_segments_template(segments, method: str): 
+def get_segments_template(segments, method: str = 'mean'): 
     '''
     Assuming a list of segments, return a template. This will work with multivariable signals as well.
 

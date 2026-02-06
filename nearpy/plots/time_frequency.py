@@ -67,7 +67,7 @@ def plot_scalogram(
     export_path: str = '',
     fig = None, 
     ax = None, 
-    figsize = (4, 4),
+    figsize = (8, 4),
     dpi = 150, 
 ):
     '''
