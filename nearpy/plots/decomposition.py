@@ -5,7 +5,6 @@ Using a combination of decomposition methods, display scalograms corresponding t
 import pywt
 import numpy as np
 import matplotlib.pyplot as plt
-from nearpy import normalize
 
 from PyEMD import EMD
 from vmdpy import VMD
@@ -14,9 +13,9 @@ from nearpy.preprocess import lcd_decomposition, lmd_decomposition, hvd_decompos
 
 # ========== EMPIRICAL MODE DECOMPOSITION (EMD) ==========
 def emd_cwt_analysis(signal: np.ndarray, fs: int, wavelet: str = 'cmor1.5-1.0'):
-    # Normalize signal    
-    signal = normalize(signal)
-
+    '''
+    Ensure that signal is normalized
+    '''
     # EMD decomposition
     emd = EMD()
     imfs = emd.emd(signal)
@@ -44,9 +43,10 @@ def emd_cwt_analysis(signal: np.ndarray, fs: int, wavelet: str = 'cmor1.5-1.0'):
 
 # ========== VARIATIONAL MODE DECOMPOSITION (VMD) ==========
 def vmd_cwt_analysis(signal, fs: int, wavelet: str = 'cmor1.5-1.0', K: int = 6,):
-    # VMD does not work well without normalization 
-    signal = normalize(signal)
-
+    '''
+    Ensure that signal is normalized
+    VMD does not work well without normalization 
+    '''
     # VMD decomposition
     u, _, _ = VMD(signal, alpha=2000, tau=0, K=K, DC=0, init=1, tol=1e-7)
     
