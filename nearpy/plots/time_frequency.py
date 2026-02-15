@@ -69,6 +69,7 @@ def plot_scalogram(
     ax = None, 
     figsize = (8, 4),
     dpi = 150, 
+    show_colorbar: bool = True
 ):
     '''
     Convenience function to plot CWT of provided data. 
@@ -97,7 +98,7 @@ def plot_scalogram(
         # Ensure path always exists
         Path(export_path).parent.mkdir(exist_ok=True, parents=True)
         plt.savefig(export_path, bbox_inches="tight")
-    else: 
+    elif show_colorbar: 
         if use_log_scale: 
             fig.colorbar(img, ax=ax, label='Magnitude (dB)')
         else:
@@ -107,9 +108,9 @@ def plot_scalogram(
         ax.set_ylabel('Frequency (Hz)')
         ax.set_title(f'Scalogram, {wavelet}')
         
-        plt.show(block=False)
+        # plt.show(block=False)
 
-    plt.close()
+    # plt.close()
     
 def plot_sst(self, data: np.ndarray, fs: float,
             wavelet: str = 'morlet', gamma: float = 5.0,

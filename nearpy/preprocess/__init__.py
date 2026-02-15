@@ -1,3 +1,8 @@
+from .adaptive import (
+    lms_filter, 
+    rls_filter,
+    kalman_filter
+)
 from .decomposition import (
     lcd_decomposition,
     lmd_decomposition,
@@ -41,6 +46,9 @@ from .quality import (
 )
 
 __all__ = [
+    'lms_filter',
+    'rls_filter',
+    'kalman_filter',
     'lcd_decomposition',
     'lmd_decomposition',
     'hvd_decomposition', 
