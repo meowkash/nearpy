@@ -98,7 +98,8 @@ def plot_scalogram(
         # Ensure path always exists
         Path(export_path).parent.mkdir(exist_ok=True, parents=True)
         plt.savefig(export_path, bbox_inches="tight")
-    elif show_colorbar: 
+    
+    if show_colorbar: 
         if use_log_scale: 
             fig.colorbar(img, ax=ax, label='Magnitude (dB)')
         else:
@@ -107,10 +108,8 @@ def plot_scalogram(
         ax.set_xlabel('Time (s)')    
         ax.set_ylabel('Frequency (Hz)')
         ax.set_title(f'Scalogram, {wavelet}')
-        
-        # plt.show(block=False)
 
-    # plt.close()
+    return coeffs
     
 def plot_sst(self, data: np.ndarray, fs: float,
             wavelet: str = 'morlet', gamma: float = 5.0,

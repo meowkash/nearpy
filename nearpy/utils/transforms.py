@@ -17,10 +17,16 @@ def align_and_normalize(sig, ref):
     else:
         return minmax_scale(sig)
 
-def normalize(x: np.ndarray) -> np.ndarray:
+def normalize(x: np.ndarray, center: bool = False) -> np.ndarray:
     x_min = np.min(x, axis=-1, keepdims=True)
     x_max = np.max(x, axis=-1, keepdims=True)
-    return (x - x_min) / (x_max - x_min + 1e-8)
+    
+    if center: 
+        x_mean = np.average(x, axis=-1, keepdims=True)
+        x = 2 * (x - x_mean) # Zero-center
+        return x/(x_max-x_min + 1e-12)
+    else: 
+        return (x - x_min) / (x_max - x_min + 1e-12)
 
 def normalize_torch(x: torch.Tensor) -> torch.Tensor:
     x_min = x.amin(dim=-1, keepdim=True)
