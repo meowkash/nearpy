@@ -54,7 +54,7 @@ def read_tdms(f_path,
         for ch in rf_channels: 
             rf[ch] = dec_and_trunc(tdmg[ch][:], truncate[0], truncate[1], ds_ratio)
         for ch in bio_channels: 
-            bio[ch] = tdmg[ch][truncate[0]:alen-truncate[1]]
+            bio[ch] = tdmg[ch][truncate[0]:-truncate[1]]
                         
         # Properties can be read using the following command
         props = tdm.properties
