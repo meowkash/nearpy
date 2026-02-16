@@ -5,6 +5,7 @@ import contextlib
 import logging 
 import datetime 
 from pathlib import Path 
+import io
 
 # Log if logger available, else print
 def log_print(logger: logging.Logger, 
@@ -55,7 +56,6 @@ def print_metadata(args, title: str = 'OPERATION'):
 @contextmanager
 def suppress_stdout(enable = True):
     if enable: 
-        import io
         with redirect_stdout(io.StringIO()):
             yield
     else: 
