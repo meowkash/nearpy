@@ -28,7 +28,7 @@ def get_segments_template(segments, method: str = 'mean'):
     if method == 'mean': 
         template = np.mean(segments, axis=0)
     elif method == 'dba': 
-        template = DBA(segments)
+        template = DBA(segments, gamma=0.5, tol=1e-4)
     else: 
         print(f'Template method {method} not currently implemented.')
     

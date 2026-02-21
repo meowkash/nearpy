@@ -65,7 +65,13 @@ class VisualizePredictions(Callback):
         
         sns.set_style('whitegrid')
         
-        x, y = dataset[indices]
+        # Ensure this can always work if num_elems >= 2
+        if len(dataset[indices]) < 2:
+            return # No need to plot 
+        else: 
+            x = dataset[indices][0]
+            y = dataset[indices][1]
+        
         x = np.array(x.tolist(), dtype=float)
         x = torch.Tensor(x).to(device) # len(indices) x num_vars * num_samples
 
@@ -83,7 +89,8 @@ class VisualizePredictions(Callback):
             y_pred = y_pred.squeeze(0).cpu().numpy()
         if isinstance(x, torch.Tensor):
             x = x.cpu().numpy()
-        if isinstance(y, torch.Tensor) and y is not None:
+            
+        if y is not None and isinstance(y, torch.Tensor):
             y = y.cpu().numpy()
             
         # We will only plot if outputs are valid 
