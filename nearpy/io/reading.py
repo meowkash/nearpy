@@ -1,9 +1,85 @@
 from nptdms import TdmsFile
 from pathlib import Path
+from typing import List 
 
-from nearpy.utils import dec_and_trunc, get_channels_from_df, split_channels_by_type
+from nearpy.utils import (
+    dec_and_trunc, 
+    get_channels_from_df, 
+    split_channels_by_type
+)
 
 from .console import log_print 
+
+def read_tdms_v2(
+    f_path: Path, 
+    rf_ds_ratio: int = 1, 
+    truncate: List = None,
+    rf_sr: int = None, 
+    bio_sr: int = None,  
+    get_bio: bool = False,
+    exclude_rf_channels: List = None, 
+    logger = None
+):
+    ''' [Future Projects Should Use This]
+    Read TDMS files, parse them into appropriate channel types and return as 
+    dictionary allowing for easy working with Dataframes. 
+    
+    Input Arguments: 
+        f_path: Path -> File location
+        
+        rf_ds_ratio: int -> Amount by which raw RF data must be downsampled (default = 1)
+        truncate: List -> Time (in seconds) to truncate from the start and end of data. 
+            Note: If truncation is specified, sample rates must be provided. 
+        rf_sr: int -> Sample rate for RF data (only needed for truncation)
+        bio_sr: int -> Sample rate for BIOPAC data (only needed for truncation)
+        
+        get_bio: bool -> Flag for whether BIOPAC data should be returned or not
+        exclude_rf_channels: List -> Specifies RF channels to be excluded
+        
+        logger: None or logging.Logger -> Logging messages 
+    '''
+    if truncate is not None: 
+        assert isinstance(truncate, (list, tuple)), f"'truncate' must be a list of times (in seconds), got {type(truncate)} instead"
+
+        assert rf_sr is not None, "Since RF data is being truncated, 'rf_sr' must not be None"
+        if get_bio: 
+            assert bio_sr is not None, "Since BIOPAC data is being truncated, 'bio_sr' must not be None"
+
+    with TdmsFile.open(f_path) as tdm:
+        # Get TDMS group
+        tdmg = tdm['Untitled']
+        # List available channels 
+        tdm_channels = get_channels_from_df(tdmg.channels())
+        log_print(logger, 'debug', f'Available Channels: {tdm_channels}')
+        
+        if len(tdm_channels) == 0:
+            raise ValueError('TDMS file has no available channels')
+        
+        # Get all channels 
+        bio_channels, rf_channels = split_channels_by_type(
+            channel_list = tdm_channels, 
+            excluded_channels = exclude_rf_channels, 
+            include_biopac = get_bio
+        )
+        log_print(logger, 'info', f'Selected Channels\n BIOPAC:{bio_channels}\n RF:{rf_channels}')
+
+        # Downsample and truncate RF data
+        rf, bio = {}, {} 
+        for ch in rf_channels: 
+            rf[ch] = dec_and_trunc(tdmg[ch][:], truncate[0] * rf_sr, max(truncate[1] * rf_sr, 1), rf_ds_ratio)
+        
+        # Align RF and BIOPAC length
+        if get_bio: 
+            bio_start = int(truncate[0] * bio_sr)
+            bio_end = bio_start + int(bio_sr * len(rf[ch])/rf_sr) + 1 
+            for ch in bio_channels: 
+                bio[ch] = tdmg[ch][bio_start:bio_end]
+        
+        # Properties can be read using the following command
+        props = tdm.properties
+
+    return rf, bio, props
+
 
 # Loads a TDMS file into a dictionary 
 def read_tdms(f_path, 

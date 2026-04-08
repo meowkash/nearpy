@@ -34,7 +34,8 @@ dependencies = [
     "neurokit2 (>=0.2.12,<0.3.0)",
     "torchaudio (>=2.9.1,<3.0.0)",
     "graphviz (>=0.21,<0.22)",
-    "torchview (>=0.2.7,<0.3.0)"
+    "torchview (>=0.2.7,<0.3.0)",
+    "scienceplots (>=2.2.1,<3.0.0)"
 ]
 
 [build-system]
