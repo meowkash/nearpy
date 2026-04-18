@@ -1,7 +1,7 @@
 from nptdms import TdmsFile
 from pathlib import Path
-from typing import List 
-
+from typing import List
+import numpy as np 
 from nearpy.utils import (
     dec_and_trunc, 
     get_channels_from_df, 
@@ -68,6 +68,11 @@ def read_tdms_v2(
         for ch in rf_channels: 
             rf[ch] = dec_and_trunc(tdmg[ch][:], truncate[0] * rf_sr, max(truncate[1] * rf_sr, 1), rf_ds_ratio)
         
+        # Process properties 
+        props = {
+            'Timestamp': tdmg[ch].properties['NI_ExpTimeStamp']
+        }
+
         # Align RF and BIOPAC length
         if get_bio: 
             bio_start = int(truncate[0] * bio_sr)
@@ -75,9 +80,6 @@ def read_tdms_v2(
             for ch in bio_channels: 
                 bio[ch] = tdmg[ch][bio_start:bio_end]
         
-        # Properties can be read using the following command
-        props = tdm.properties
-
     return rf, bio, props
 
 
