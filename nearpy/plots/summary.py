@@ -16,7 +16,8 @@ def pretty_boxplot(
     f_mult: float = None,
     title: str = 'Expression Detection Accuracy',
     xlabel: str = 'Subject Number',
-    ylabel: str = 'Accuracy (%)'
+    ylabel: str = 'Accuracy (%)',
+    dpi=300
 ) -> None: 
     
     if not labels: 
@@ -36,7 +37,7 @@ def pretty_boxplot(
         f_mult = np.sqrt(figsize[0]*figsize[1]/54)
     
     # Make figure 
-    plt.figure(figsize=figsize, dpi=300)    
+    plt.figure(figsize=figsize, dpi=dpi)    
     sns.set_style('whitegrid')
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = ['Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans']

@@ -70,7 +70,7 @@ class VisualizePredictions(Callback):
             return # No need to plot 
         else: 
             x = dataset[indices][0]
-            y = dataset[indices][1]
+            y = dataset[indices][2]
         
         x = np.array(x.tolist(), dtype=float)
         x = torch.Tensor(x).to(device) # len(indices) x num_vars * num_samples
@@ -107,7 +107,7 @@ class VisualizePredictions(Callback):
             sns.lineplot(y[i], ax=axes[i, 1], 
                          linewidth=3, 
                          color=colors[(3*i+1)%num_colors])
-            sns.lineplot(y_pred[i], ax=axes[i, 2], 
+            sns.lineplot(y_pred[0][i].detach().cpu().numpy(), ax=axes[i, 2], 
                          linewidth=3, 
                          color=colors[(3*i+2)%num_colors])
     

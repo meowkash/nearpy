@@ -12,6 +12,7 @@ def train_and_evaluate(
         config: dict, 
         datamodule: L.LightningDataModule,
         save_checkpoints: bool = True, 
+        enable_visualization: bool = True, 
         plot_interval: int = 5, 
         plot_indices: list[int] = None,
         num_samples: int = 5,
@@ -33,6 +34,8 @@ def train_and_evaluate(
     lr_monitor_callback = LearningRateMonitor(logging_interval="epoch")
     callbacks = [lr_monitor_callback]
 
+    max_epochs = config.get('max_epochs', 100)
+
     if save_checkpoints: 
         ckpt_path = base_path / 'Checkpoints'
         ckpt_path.mkdir(exist_ok=True, parents=True)
@@ -47,11 +50,14 @@ def train_and_evaluate(
         )
         callbacks.append(checkpoint_callback)
 
-    if isinstance(plot_interval, int) and plot_interval > 0: 
+    if enable_visualization:
+        if not (isinstance(plot_interval, int) and plot_interval > 0): 
+            plot_interval = max_epochs // 10 
+
         if plot_indices is None: 
             max_idx = len(datamodule.test_dataset) - 1 
             plot_indices = np.random.randint(0, max_idx, size=num_samples)
-
+        
         visualize_path = base_path / 'Visualizations'
         visualize_path.mkdir(exist_ok=True, parents=True)
 
@@ -75,13 +81,15 @@ def train_and_evaluate(
     trainer = L.Trainer(
         accelerator=config.get('accelerator', 'auto'), 
         devices=config.get('devices', 'auto'), 
-        max_epochs=config.get('max_epochs', 100), 
+        max_epochs=max_epochs, 
         deterministic=True, 
         check_val_every_n_epoch=1, 
         enable_progress_bar=True, # Uses TQDM Progress Bar by default
         callbacks=callbacks, 
         log_every_n_steps=1, 
-        logger=[tb_logger, csv_logger]
+        logger=[tb_logger, csv_logger],
+        # gradient_clip_val=1.0,         # Clips gradients with a norm > 1.0
+        # gradient_clip_algorithm="norm" # "norm" (default) or "value"
     )
 
     # Fit model 
