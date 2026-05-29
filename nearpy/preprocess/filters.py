@@ -60,17 +60,17 @@ def spike_removal_filter(sig, fs, window_size=11):
 
 def ncs_filt(sig, n_taps, f_p=0.1, f_s=15, fs=1000, ftype = 'bandpass'):
     # Helper function to maintain compatibility with prior MATLAB scripts
-    if ftype == 'lowpass':
-        band = [0, f_p, f_s, 0.5*fs]
-        gain = [1, 0]
-    elif ftype == 'bandpass':
+    if ftype == 'bandpass':
         band = [0, f_p/2 , f_p, f_s, f_s + f_p, 0.5*fs]
         gain = [0, 1, 0]
-    elif ftype == 'highpass':
-        band = [0, f_s, f_p, 0.5*fs]
-        gain = [0, 1]
     else:
-        return
+        band = [0, min(f_p, f_s), max(f_p, f_s), 0.5*fs] 
+        if ftype == 'lowpass': 
+            gain = [1, 0]
+        elif ftype == 'highpass':
+            gain = [0, 1]
+        else:
+            return
     
     if n_taps is None: 
         return None 

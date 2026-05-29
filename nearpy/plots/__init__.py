@@ -1,5 +1,12 @@
 from .constants import BBC_THEME, DEFAULT_PLOT_STYLE
 from .decomposition import (
+    emd_analysis, 
+    ewt_analysis, 
+    lcd_analysis, 
+    lmd_analysis,  
+    hvd_analysis, 
+    vmd_analysis,
+    wavedec_analysis,
     emd_cwt_analysis, 
     ewt_cwt_analysis, 
     lcd_cwt_analysis, 
@@ -22,6 +29,13 @@ from .timedomain import plot_routine_template, plot_time_series
 __all__ = [
     "BBC_THEME", 
     "DEFAULT_PLOT_STYLE",
+    "emd_analysis", 
+    "ewt_analysis", 
+    "lcd_analysis", 
+    "lmd_analysis",  
+    "hvd_analysis", 
+    "vmd_analysis",
+    "wavedec_analysis",
     'emd_cwt_analysis', 
     'ewt_cwt_analysis', 
     'lcd_cwt_analysis', 

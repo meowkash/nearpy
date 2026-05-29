@@ -15,8 +15,9 @@ def plot_spectrogram(
     noverlap: Optional[int] = None,
     export: bool = False, 
     export_dir: str = '',
-    figsize = (4, 4),
-    dpi = 300 
+    figsize = (8, 4),
+    dpi = 150,
+    use_log_scale: bool = True
 ):
     if nperseg is None:
         nperseg = min(256, len(data) // 8)
@@ -37,11 +38,14 @@ def plot_spectrogram(
     fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = plt.gca()
     
-    Sx_dB = 10 * np.log10(np.fmax(specgram, 1e-10))
-    img = ax.imshow(Sx_dB, origin='lower', aspect='auto',
+    if use_log_scale:
+        coeffs = 10 * np.log10(np.fmax(specgram, 1e-10))
+    else: 
+        coeffs = np.fmax(specgram, 1e-10)
+
+    img = ax.imshow(coeffs, origin='lower', aspect='auto',
             extent=SFT.extent(len(data)), cmap='turbo')
     
-    plt.tight_layout()    
     if export: 
         ax.set_xticks([])
         ax.set_yticks([])
@@ -53,9 +57,6 @@ def plot_spectrogram(
         ax.set_xlabel('Time (s)')    
         ax.set_ylabel('Frequency (Hz)')
         ax.set_title('Spectrogram')
-        plt.show(block=False)
-
-    plt.close()
 
 def plot_scalogram(
     data, 

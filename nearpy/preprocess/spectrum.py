@@ -27,7 +27,6 @@ def ncs_fft(sig, fs, plot=False, range=None):
         
     if plot:
         import matplotlib.pyplot as plt
-        plt.ion()
         plt.plot(f, P)
         plt.show()
         
